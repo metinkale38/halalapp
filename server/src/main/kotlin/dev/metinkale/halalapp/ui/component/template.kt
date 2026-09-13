@@ -150,6 +150,12 @@ fun HTML.template(
                     span { +"Alle Angaben ohne Gewähr" }
                     span { +"|" }
                     a(classes = "hover:text-gray-900 transition-colors underline decoration-dotted") {
+                        href = "https://github.com/metinkale38/halalapp"
+                        target = "_blank"
+                        +"""Open Source"""
+                    }
+                    span { +"|" }
+                    a(classes = "hover:text-gray-900 transition-colors underline decoration-dotted") {
                         href = "/impressum"
                         +"""Impressum"""
                     }
