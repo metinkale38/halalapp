@@ -1,0 +1,10 @@
+{
+  "web_apps": [
+    {
+      "manifest": "https://www.halalapp.de/manifest.json",
+      "details": {
+        "paths": ["/*"]
+      }
+    }
+  ]
+}

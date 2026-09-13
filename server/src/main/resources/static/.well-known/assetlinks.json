@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.metinkale.halalapp",
+      "sha256_cert_fingerprints": [
+        "7A:0F:57:DB:9D:FD:F4:6B:FB:AC:C5:11:1C:46:78:3D:C3:43:44:CB:F3:E0:0A:1E:6D:9C:A6:20:4F:9E:AC:A2"
+      ]
+    }
+  }
+]

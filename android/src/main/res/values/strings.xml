@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="additional_trusted_origins">
+        <item>https://forum.halalapp.de</item>
+        <item>https://www.halalapp.de</item>
+        <item>https://halalapp.de</item>
+    </string-array>
+</resources>

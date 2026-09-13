@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+@source "../../..";
+
+@layer base {
+    h1 {
+        @apply text-4xl font-extrabold tracking-tight;
+    }
+
+    h2 {
+        @apply text-3xl font-bold tracking-tight;
+    }
+
+    h3 {
+        @apply text-2xl font-semibold;
+    }
+
+    h4 {
+        @apply text-xl font-bold;
+    }
+
+    h5 {
+        @apply text-lg font-semibold;
+    }
+
+    h6 {
+        @apply text-sm font-bold uppercase tracking-wider;
+    }
+}
+
+@theme {
+    /* Primary */
+    --color-primary: #017864;
+    --color-primary-100: #ccede7;
+    --color-primary-200: #99dbcf;
+    --color-primary-300: #66c9b7;
+    --color-primary-400: #33b79f;
+    --color-primary-500: #017864;
+    --color-primary-600: #016352;
+    --color-primary-700: #014d40;
+    --color-primary-800: #00382e;
+    --color-primary-900: #00221c;
+
+    /* Secondary */
+    --color-secondary: #01ab8e;
+    --color-secondary-100: #e0f7f3;
+    --color-secondary-200: #b3ece2;
+    --color-secondary-300: #85e0d1;
+    --color-secondary-400: #57d5c0;
+    --color-secondary-500: #01ab8e; /* Basis */
+    --color-secondary-600: #01997f;
+    --color-secondary-700: #018871;
+    --color-secondary-800: #017662;
+    --color-secondary-900: #016453;
+
+    /* App width */
+    --width-app: 1130px;
+    --max-width-app: 1130px;
+}
+
+
+.btn-primary {
+    @apply px-6 py-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply bg-primary text-white hover:bg-primary-600 focus:ring-primary;
+}
+
+.btn-secondary {
+    @apply px-6 py-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply bg-secondary text-white hover:bg-secondary-600 focus:ring-secondary;
+}
+
+.imagefullscreen {
+    @apply fixed left-0 right-0 top-0 bottom-0 h-screen w-screen max-h-none;
+    @apply z-50;
+    @apply bg-black/90;
+    @apply object-contain;
+    @apply object-center;
+}

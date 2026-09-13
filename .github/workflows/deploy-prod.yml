@@ -1,0 +1,26 @@
+name: Deploy to Prod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Download Artifact from last Build
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yml
+          branch: main
+          name: server-jar
+
+      - name: Deploy to Prod Server
+        env:
+          HMAC_SECRET: ${{ secrets.DEPLOY_SECRET_PROD }}
+          SERVER_URL: ${{ secrets.DEPLOY_URL_PROD }}
+        run: |
+          SIGNATURE=$(openssl dgst -sha256 -hmac "$HMAC_SECRET" -binary server-all.jar | base64)
+          curl --fail -X POST "$SERVER_URL/deploy" -H "X-Signature: $SIGNATURE" --data-binary @server-all.jar

@@ -1,0 +1,16 @@
+name: Dependency Graph
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ '**.gradle', '**.gradle.kts' ]
+
+jobs:
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '17', distribution: 'temurin' }
+      - uses: gradle/actions/dependency-submission@v4

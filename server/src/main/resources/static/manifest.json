@@ -1,0 +1,53 @@
+{
+  "short_name": "HalalApp",
+  "name": "HalalApp",
+  "icons": [
+    {
+      "src": "icons/icon-16.webp",
+      "type": "image/webp",
+      "sizes": "16x16"
+    },
+    {
+      "src": "icons/icon-32.webp",
+      "type": "image/webp",
+      "sizes": "32x32"
+    },
+    {
+      "src": "icons/icon-180.webp",
+      "type": "image/webp",
+      "sizes": "180x180"
+    },
+    {
+      "src": "icons/icon-192.webp",
+      "type": "image/webp",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512.webp",
+      "type": "image/webp",
+      "sizes": "512x512"
+    },
+    {
+      "src": "icons/icon-maskable.webp",
+      "type": "image/webp",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#017864",
+  "theme_color": "#017864",
+  "display": "standalone",
+  "orientation": "portrait",
+  "url_handlers": [
+    {
+      "origin": "https://halalapp.de.de"
+    },
+    {
+      "origin": "https://www.halalapp.de"
+    },
+    {
+      "origin": "https://forum.halalapp.de"
+    }
+  ]
+}
