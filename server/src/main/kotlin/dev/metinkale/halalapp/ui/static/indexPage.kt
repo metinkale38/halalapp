@@ -1,7 +1,6 @@
 package dev.metinkale.halalapp.ui.static
 
 import dev.metinkale.halalapp.ui.component.card
-import dev.metinkale.halalapp.ui.component.flarum.FlarumCache
 import dev.metinkale.halalapp.ui.component.flarum.FlarumResponse
 import dev.metinkale.halalapp.ui.component.flarum.renderFlarumFeed
 import dev.metinkale.halalapp.ui.component.template
@@ -10,9 +9,30 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.html.*
 import kotlinx.serialization.json.Json
+
+
+private val forumCache = flow {
+    val client = HttpClient {
+        install(ContentNegotiation) {
+            json(Json { ignoreUnknownKeys = true })
+        }
+    }
+
+    while (true) {
+        val response: FlarumResponse =
+            runBlocking {
+                client.get("https://forum.halalapp.de/api/discussions?filter[tag]=ank%C3%BCndigungen&sort=-createdAt")
+                    .body()
+            }
+        emit(response)
+        delay(3600_000) // 1 Stunde
+    }
+}.stateIn(CoroutineScope(Dispatchers.IO + SupervisorJob()), started = kotlinx.coroutines.flow.SharingStarted.Eagerly, initialValue = null)
 
 fun HTML.indexPage() = template(
     title = "HalalApp – Dein smarter Begleiter im Supermarkt",
@@ -60,22 +80,7 @@ fun HTML.indexPage() = template(
         }
     }
 
-    val feed = FlarumCache.get("announcements") ?: try {
-        val client = HttpClient {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-        val response: FlarumResponse =
-            runBlocking {
-                client.get("https://forum.halalapp.de/api/discussions?filter[tag]=ank%C3%BCndigungen&sort=-createdAt")
-                    .body()
-            }
-        FlarumCache.put("announcements", response)
-        response
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
+    forumCache.value?.let { feed ->
+        renderFlarumFeed(feed)
     }
-    renderFlarumFeed(feed)
 }
