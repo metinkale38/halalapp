@@ -11,6 +11,8 @@ object DatabaseFactory {
             username = System.getenv("JDBC_USERNAME")
             password = System.getenv("JDBC_PASSWORD")
             maximumPoolSize = poolSize ?: System.getenv("DB_POOL_SIZE")?.toInt() ?: 10
+            minimumIdle = 3
+            keepaliveTime = 60000
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
 
