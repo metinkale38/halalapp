@@ -11,40 +11,24 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 fun ProductProcessorWorker.process(products: List<Product>): List<Product> = transaction {
     val insights = ProductInsightsTable.findAllByBarcode(products.map { it.id }).groupBy { it.product_id }
-    products.map { it.processLecithine().processTags().processInsights(insights[it.id] ?: emptyList()) }
+    products.map { it.processTags().processInsights(insights[it.id] ?: emptyList()) }
 }
 
-
-private fun Product.processLecithine(): Product {
-    val lecithine = animalIngredients.find { it.id == "en:e322" }
-    if (lecithine != null) {
-        val ingredientsText = ingredientsText.lowercase().replace("_", "")
-            .replace("[", "(").replace("]", ")")
-        if (ingredientsText.contains("lecithine (soja)")
-            || ingredientsText.contains("lecithins (soy)")
-            || ingredientsText.contains("lécithines (soy)")
-        ) return copy(animalIngredients = animalIngredients.filter { it.id != "en:e322" }).run {
-            copy(
-                status = if (ingredients.isEmpty()) listOf(Status.INCOMPLETE) else buildStatus(
-                    animalIngredients,
-                    alcoholIngredients,
-                    unknownIngredients
-                )
-            )
-        }
-    }
-    return this
-}
 
 private fun Product.processTags(): Product {
     val classifications = tags.mapNotNull { ClassificationsTable.findById(it) }
+    val animalIngredients = if (classifications.any { it.animal }) classifications.filter { it.animal }
+        .map { Ingredient("", "", it) } else animalIngredients
+    val alcoholIngredients = if (classifications.any { it.alcohol }) classifications.filter { it.alcohol }
+        .map { Ingredient("", "", it) } else alcoholIngredients
+    val unknownIngredients = if (classifications.any { it.animal } && classifications.any { it.alcohol })
+        emptyList() else unknownIngredients
+
     return copy(
-        animalIngredients = if (classifications.any { it.animal }) classifications.filter { it.animal }
-            .map { Ingredient("", "", it) } else animalIngredients,
-        alcoholIngredients = if (classifications.any { it.alcohol }) classifications.filter { it.alcohol }
-            .map { Ingredient("", "", it) } else alcoholIngredients,
-        unknownIngredients = if (classifications.any { it.animal } && classifications.any { it.alcohol })
-            emptyList() else unknownIngredients,
+        animalIngredients = animalIngredients,
+        alcoholIngredients = alcoholIngredients,
+        unknownIngredients = unknownIngredients,
+        status = buildStatus(animalIngredients, alcoholIngredients, unknownIngredients),
     )
 }
 
