@@ -6,12 +6,24 @@ import dev.metinkale.halalapp.db.entity.ProductInsights
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
 import dev.metinkale.halalapp.domain.Confidence
-import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-fun ProductProcessorWorker.process(products: List<Product>): List<Product> = transaction {
+private val unknownIngredient = ClassificationsTable.findById("unknown_ingredient")!!
+
+fun process(products: List<Product>): List<Product> = transaction {
     val insights = ProductInsightsTable.findAllByBarcode(products.map { it.id }).groupBy { it.product_id }
-    products.map { it.processTags().processInsights(insights[it.id] ?: emptyList()) }
+    products.map { it.checkEmpty().processTags().processInsights(insights[it.id] ?: emptyList()) }
+}
+
+private fun Product.checkEmpty(): Product {
+    return if (ingredients.isEmpty()) copy(
+        unknownIngredients = unknownIngredients + Ingredient(
+            "empty",
+            "Keine Zutatenliste",
+            unknownIngredient
+        )
+    )
+    else this
 }
 
 
