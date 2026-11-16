@@ -12,58 +12,44 @@ import javax.imageio.ImageWriteParam
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-data class ImageVariantData(
+data class ProcessedImage(
+    val jpeg: ByteArray,
     val width: Int,
-    val mime: String,
-    val bytes: ByteArray,
-    val sha256: String,
-)
-
-data class ProcessedImageUpload(
-    val originalMime: String,
-    val originalWidth: Int,
-    val originalHeight: Int,
-    val originalBytes: Int,
-    val sha256: String,
-    val variants: List<ImageVariantData>,
+    val height: Int,
 )
 
 object ProductImageService {
     const val MAX_BYTES = 10 * 1024 * 1024
     private const val MAX_DIMENSION = 10_000
     private const val MAX_PIXELS = 60_000_000L
-    private val variantWidths = listOf(300, 800, 1600)
+    private const val THUMBNAIL_SIZE = 256
 
-    fun process(bytes: ByteArray, mime: String): ProcessedImageUpload {
+    fun process(bytes: ByteArray, mime: String): ProcessedImage {
         require(bytes.isNotEmpty()) { "Die Bilddatei ist leer." }
         require(bytes.size <= MAX_BYTES) { "Das Bild ist zu groß (maximal 10 MB)." }
 
-        val source = readImage(bytes)
-        val rgb = toRgb(source)
-        val widths = (variantWidths + rgb.width)
-            .filter { it <= rgb.width }
-            .distinct()
-            .sorted()
-
-        val variants = widths.map { width ->
-            val image = if (width == rgb.width) rgb else resize(rgb, width)
-            val jpeg = toJpeg(image)
-            ImageVariantData(
-                width = width,
-                mime = "image/jpeg",
-                bytes = jpeg,
-                sha256 = sha256(jpeg),
-            )
-        }
-
-        return ProcessedImageUpload(
-            originalMime = mime,
-            originalWidth = rgb.width,
-            originalHeight = rgb.height,
-            originalBytes = bytes.size,
-            sha256 = sha256(bytes),
-            variants = variants,
+        val rgb = toRgb(readImage(bytes))
+        return ProcessedImage(
+            jpeg = toJpeg(rgb),
+            width = rgb.width,
+            height = rgb.height,
         )
+    }
+
+    fun thumbnail(fullJpeg: ByteArray): ByteArray {
+        val source = readImage(fullJpeg)
+        val scale = minOf(1.0, THUMBNAIL_SIZE.toDouble() / max(source.width, source.height))
+        val width = max(1, (source.width * scale).roundToInt())
+        val height = max(1, (source.height * scale).roundToInt())
+        return toJpeg(resize(toRgb(source), width, height))
+    }
+
+    fun dataUri(jpeg: ByteArray): String =
+        "data:image/jpeg;base64," + java.util.Base64.getEncoder().encodeToString(jpeg)
+
+    fun decodeDataUri(value: String): ByteArray {
+        val base64 = value.substringAfter("base64,", value)
+        return java.util.Base64.getDecoder().decode(base64)
     }
 
     private fun readImage(bytes: ByteArray): BufferedImage {
@@ -107,8 +93,7 @@ object ProductImageService {
         return rgb
     }
 
-    private fun resize(source: BufferedImage, width: Int): BufferedImage {
-        val height = max(1, (source.height.toDouble() * width / source.width).roundToInt())
+    private fun resize(source: BufferedImage, width: Int, height: Int): BufferedImage {
         val target = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         val graphics = target.createGraphics()
         graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)

@@ -24,8 +24,7 @@ data class Product(
 
 @Serializable
 data class ProductImages(
-    val front: Map<Int, String>,
-    val ingredients: Map<Int, String>,
+    val front: Map<Int, String> = emptyMap(),
 ) {
     private fun Map<Int, String>.getPhoto(minWidth: Int = 100): String? {
         return (filter { it.key >= minWidth }.minByOrNull { it.key }
@@ -35,9 +34,6 @@ data class ProductImages(
 
     fun getFrontPhoto(minWidth: Int = 100): String =
         front.getPhoto(minWidth) ?: "/nophoto.webp"
-
-    fun getIngredientPhoto(minWidth: Int = 100): String? =
-        ingredients.getPhoto(minWidth)
 }
 
 @Serializable

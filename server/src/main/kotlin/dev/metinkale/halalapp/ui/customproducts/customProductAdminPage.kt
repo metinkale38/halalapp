@@ -57,21 +57,10 @@ fun HTML.customProductAdminPage(
                     statusBadgeComponent("Offen", Status.DOUBTFUL)
                 }
 
-                if (proposal.imagePreviews.isNotEmpty()) {
-                    div(classes = "flex flex-wrap gap-3") {
-                        proposal.imagePreviews.forEach { preview ->
-                            val file = preview.files.minByOrNull { it.second }
-                            if (file != null) {
-                                a {
-                                    href = "/crm/image/${file.first}"
-                                    target = "_blank"
-                                    img(classes = "max-h-40 w-auto rounded-lg border border-gray-200 object-contain") {
-                                        src = "/crm/image/${file.first}"
-                                        alt = preview.image.kind.name
-                                    }
-                                }
-                            }
-                        }
+                proposal.imageDataUri?.let { dataUri ->
+                    img(classes = "max-h-40 w-auto rounded-lg border border-gray-200 object-contain") {
+                        src = dataUri
+                        alt = "Frontfoto"
                     }
                 }
 
