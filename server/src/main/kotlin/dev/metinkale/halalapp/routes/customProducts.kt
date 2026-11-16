@@ -18,7 +18,6 @@ import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.customproducts.CustomProductFormData
 import dev.metinkale.halalapp.ui.customproducts.customProductAdminPage
-import dev.metinkale.halalapp.ui.customproducts.customProductBarcodePage
 import dev.metinkale.halalapp.ui.customproducts.customProductFormPage
 import io.ktor.http.*
 import io.ktor.http.content.PartData
@@ -59,20 +58,15 @@ fun Routing.customProductRoutes() {
             val barcode = call.request.queryParameters["id"]
                 ?: call.request.queryParameters["barcode"]
                 ?: ""
-            call.respondHtml {
-                if (barcode.isBlank()) {
-                    customProductBarcodePage()
-                } else {
-                    try {
-                        CustomProductService.validateBarcode(barcode)
-                        customProductFormPage(
-                            data = CustomProductFormData(barcode = barcode),
-                            animalOptions = CustomProductService.classificationOptions(animal = true),
-                            alcoholOptions = CustomProductService.classificationOptions(animal = false),
-                        )
-                    } catch (e: IllegalArgumentException) {
-                        customProductBarcodePage(barcode, e.message)
-                    }
+            if (barcode.isBlank()) {
+                call.respondRedirect("/scan")
+            } else {
+                call.respondHtml {
+                    customProductFormPage(
+                        data = CustomProductFormData(barcode = barcode),
+                        animalOptions = CustomProductService.classificationOptions(animal = true),
+                        alcoholOptions = CustomProductService.classificationOptions(animal = false),
+                    )
                 }
             }
         }

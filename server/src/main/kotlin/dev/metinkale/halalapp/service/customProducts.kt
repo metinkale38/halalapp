@@ -63,10 +63,7 @@ object CustomProductService {
 
     fun validateBarcode(raw: String): String {
         val barcode = raw.trim()
-        require(barcode.length in setOf(8, 12, 13, 14) && barcode.all { it.isDigit() }) {
-            "Der Barcode muss aus 8, 12, 13 oder 14 Ziffern bestehen."
-        }
-        require(isValidGtin(barcode)) { "Der Barcode hat eine ungültige Prüfziffer." }
+        require(barcode.isNotBlank()) { "Barcode ist erforderlich." }
         return barcode
     }
 
@@ -342,14 +339,5 @@ object CustomProductService {
     private fun reprocess(barcode: String) {
         runCatching { ProductProcessorWorker.processOne(barcode) }
             .onFailure { logger.error("Could not process custom product $barcode", it) }
-    }
-
-    private fun isValidGtin(code: String): Boolean {
-        if (code.length < 8) return false
-        val sum = code.dropLast(1).reversed().mapIndexed { index, char ->
-            char.digitToInt() * if (index % 2 == 0) 3 else 1
-        }.sum()
-        val checkDigit = (10 - sum % 10) % 10
-        return checkDigit == code.last().digitToInt()
     }
 }
