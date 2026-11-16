@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS product_images (
     id              text PRIMARY KEY,
     proposal_id     text REFERENCES proposals(id) ON DELETE CASCADE,
     product_id      text,
-    kind            text NOT NULL CHECK (kind IN ('FRONT', 'INGREDIENTS')),
     status          text NOT NULL DEFAULT 'PENDING'
                         CHECK (status IN ('PENDING', 'ATTACHED', 'REJECTED', 'REPLACED')),
     original_mime   text NOT NULL,

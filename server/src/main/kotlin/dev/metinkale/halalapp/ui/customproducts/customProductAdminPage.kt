@@ -67,7 +67,7 @@ fun HTML.customProductAdminPage(
                                     target = "_blank"
                                     img(classes = "max-h-40 w-auto rounded-lg border border-gray-200 object-contain") {
                                         src = "/crm/image/${file.first}"
-                                        alt = preview.image.kind.name
+                                        alt = "Frontfoto"
                                     }
                                 }
                             }

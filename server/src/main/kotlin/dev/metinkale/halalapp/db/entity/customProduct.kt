@@ -2,11 +2,6 @@ package dev.metinkale.halalapp.db.entity
 
 import java.time.Instant
 
-enum class ProductImageKind {
-    FRONT,
-    INGREDIENTS
-}
-
 enum class ProductImageStatus {
     PENDING,
     ATTACHED,
@@ -18,7 +13,6 @@ data class ProductImage(
     val id: String,
     val proposalId: String?,
     val productId: String?,
-    val kind: ProductImageKind,
     val status: ProductImageStatus,
     val originalMime: String,
     val originalWidth: Int,

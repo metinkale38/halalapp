@@ -4,7 +4,6 @@ import dev.metinkale.halalapp.db.entity.CustomProductProposal
 import dev.metinkale.halalapp.db.entity.ProductComponent
 import dev.metinkale.halalapp.db.entity.ProductImage
 import dev.metinkale.halalapp.db.entity.ProductImagePreview
-import dev.metinkale.halalapp.db.entity.ProductImageKind
 import dev.metinkale.halalapp.db.entity.ProductImageStatus
 import dev.metinkale.halalapp.db.entity.ProductImages
 import dev.metinkale.halalapp.db.table.ClassificationsTable
@@ -31,7 +30,6 @@ import java.util.UUID
 const val CUSTOM_PRODUCT_ENTITY = "products_custom"
 
 data class UploadedImageInput(
-    val kind: ProductImageKind,
     val mime: String,
     val bytes: ByteArray,
 )
@@ -112,7 +110,6 @@ object CustomProductService {
                 insertImage(
                     proposalId = proposalId,
                     productId = null,
-                    kind = ProductImageKind.FRONT,
                     status = ProductImageStatus.PENDING,
                     upload = it.second,
                     createdBy = input.creator,
@@ -173,7 +170,6 @@ object CustomProductService {
             }
 
             val images = ProductImagesTable.findByProposal(proposalId)
-            val imageMap = images.map { it.kind to it.id }.toMap()
 
             ProductsCustomTable.insert {
                 it[ProductsCustomTable.id] = barcode
@@ -181,10 +177,7 @@ object CustomProductService {
                 it[ProductsCustomTable.brand] = json["brand"].orEmpty()
                 it[ProductsCustomTable.ingredients] = emptyList<ProductComponent>()
                 it[ProductsCustomTable.ingredientsText] = ""
-                it[ProductsCustomTable.images] = ProductImages(
-                    front = imageUrlsFor(images, ProductImageKind.FRONT),
-                    ingredients = emptyMap(),
-                )
+                it[ProductsCustomTable.images] = ProductImages(front = imageUrlsFor(images))
                 it[ProductsCustomTable.tags] = emptyList()
                 it[ProductsCustomTable.traces] = emptyList()
                 it[ProductsCustomTable.allergens] = emptyList()
@@ -201,8 +194,7 @@ object CustomProductService {
                     json["alcohol"]?.split(";")?.filter { id -> id.isNotBlank() }.orEmpty()
             }
 
-            val imageIds = imageMap.values.toList()
-            ProductImagesTable.attachToProduct(imageIds, barcode)
+            ProductImagesTable.attachToProduct(images.map { it.id }, barcode)
             ProposalsTable.update({ ProposalsTable.id eq proposalId }) {
                 it[ProposalsTable.status] = RequestStatus.APPROVED
             }
@@ -244,23 +236,18 @@ object CustomProductService {
             )
             val existingImages = ProductImagesTable.findByProduct(barcode)
 
-            var front = existingImages.filter { it.kind == ProductImageKind.FRONT }
-            val ingredientImages = existingImages.filter { it.kind == ProductImageKind.INGREDIENTS }
+            var front = existingImages
 
             if (input.removeFront || frontUpload != null) {
                 ProductImagesTable.markStatus(front.map { it.id }, ProductImageStatus.REPLACED)
                 front = emptyList()
             }
-            if (ingredientImages.isNotEmpty()) {
-                ProductImagesTable.markStatus(ingredientImages.map { it.id }, ProductImageStatus.REPLACED)
-            }
 
-            val frontUrls = imageUrlsFor(front, ProductImageKind.FRONT) +
+            val frontUrls = imageUrlsFor(front) +
                     (frontUpload?.let {
                         insertImage(
                             proposalId = null,
                             productId = barcode,
-                            kind = ProductImageKind.FRONT,
                             status = ProductImageStatus.ATTACHED,
                             upload = it,
                             createdBy = input.editor,
@@ -270,7 +257,7 @@ object CustomProductService {
             ProductsCustomTable.update({ ProductsCustomTable.id eq barcode }) {
                 it[ProductsCustomTable.name] = name
                 it[ProductsCustomTable.brand] = brand
-                it[ProductsCustomTable.images] = ProductImages(frontUrls, emptyMap())
+                it[ProductsCustomTable.images] = ProductImages(frontUrls)
             }
 
             ProposalsTable.recordDirectChange(
@@ -301,8 +288,8 @@ object CustomProductService {
             ClassificationsTable.findById(id)?.let { if (animal) it.animal else it.alcohol } == true
         }
 
-    private fun imageUrlsFor(images: List<ProductImage>, kind: ProductImageKind): Map<Int, String> =
-        images.filter { it.kind == kind }
+    private fun imageUrlsFor(images: List<ProductImage>): Map<Int, String> =
+        images
             .flatMap { image ->
                 ProductImageFilesTable.metadataByImage(image.id).map { (fileId, width) ->
                     width to "/image/$fileId"
@@ -313,7 +300,6 @@ object CustomProductService {
     private fun insertImage(
         proposalId: String?,
         productId: String?,
-        kind: ProductImageKind,
         status: ProductImageStatus,
         upload: ProcessedImageUpload,
         createdBy: String,
@@ -323,7 +309,6 @@ object CustomProductService {
             it[ProductImagesTable.id] = imageId
             it[ProductImagesTable.proposalId] = proposalId
             it[ProductImagesTable.productId] = productId
-            it[ProductImagesTable.kind] = kind
             it[ProductImagesTable.status] = status
             it[ProductImagesTable.originalMime] = upload.originalMime
             it[ProductImagesTable.originalWidth] = upload.originalWidth

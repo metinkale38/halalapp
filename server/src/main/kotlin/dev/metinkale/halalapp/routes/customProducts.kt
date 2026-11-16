@@ -1,6 +1,5 @@
 package dev.metinkale.halalapp.routes
 
-import dev.metinkale.halalapp.db.entity.ProductImageKind
 import dev.metinkale.halalapp.db.entity.ProductImageStatus
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.ProductImageFilesTable
@@ -153,7 +152,7 @@ fun Routing.customProductRoutes() {
                 val product = ProductsCustomTable.findById(id)
                     ?: throw NotFoundException("Custom-Produkt nicht gefunden")
                 val images = ProductImagesTable.findByProduct(id)
-                val front = images.firstOrNull { it.kind == ProductImageKind.FRONT }?.let { image ->
+                val front = images.firstOrNull()?.let { image ->
                     ProductImageFilesTable.metadataByImage(image.id).minByOrNull { it.second }
                         ?.let { "/image/${it.first}" }
                 }
@@ -252,7 +251,6 @@ private suspend fun ApplicationCall.readProductForm(): ParsedProductForm {
                         "Ein Bild ist zu groß (maximal 10 MB)."
                     }
                     files[name] = UploadedImageInput(
-                        kind = if (name == "front") ProductImageKind.FRONT else ProductImageKind.INGREDIENTS,
                         mime = part.contentType?.toString() ?: "image/jpeg",
                         bytes = bytes,
                     )

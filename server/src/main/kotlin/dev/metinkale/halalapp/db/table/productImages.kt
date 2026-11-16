@@ -2,7 +2,6 @@ package dev.metinkale.halalapp.db.table
 
 import dev.metinkale.halalapp.db.entity.ProductImage
 import dev.metinkale.halalapp.db.entity.ProductImageFile
-import dev.metinkale.halalapp.db.entity.ProductImageKind
 import dev.metinkale.halalapp.db.entity.ProductImageStatus
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -25,7 +24,6 @@ object ProductImagesTable : IdTable<String>("product_images") {
 
     val proposalId = text("proposal_id").nullable()
     val productId = text("product_id").nullable()
-    val kind = enumerationByName("kind", 20, ProductImageKind::class)
     val status = enumerationByName("status", 20, ProductImageStatus::class)
     val originalMime = text("original_mime")
     val originalWidth = integer("original_width")
@@ -39,7 +37,6 @@ object ProductImagesTable : IdTable<String>("product_images") {
         id = row[id].value,
         proposalId = row[proposalId],
         productId = row[productId],
-        kind = row[kind],
         status = row[status],
         originalMime = row[originalMime],
         originalWidth = row[originalWidth],

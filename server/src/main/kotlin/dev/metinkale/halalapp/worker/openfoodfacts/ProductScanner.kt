@@ -66,11 +66,8 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                 }.filter { it.product_name_de?.isBlank() == true }
                         ) { p ->
 
-                            val images: Map<String, Map<Int, String>> = listOf(
-                                "front" to p.images?.selected?.front,
-                                "ingredients" to p.images?.selected?.ingredients
-                            ).associate { (key, list) ->
-                                key to (list?.takeIf { it.isNotEmpty() }?.let { langs ->
+                            val frontImages: Map<Int, String> =
+                                p.images?.selected?.front?.takeIf { it.isNotEmpty() }?.let { langs ->
                                     val lang =
                                         listOf("de", "en", langs.keys.first()).firstOrNull { langs.containsKey(it) }
                                     val image = langs[lang]!!
@@ -81,13 +78,12 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                     val p4 = padded.substring(9, 13)
 
                                     image.sizes.entries.associate { (k, v) ->
-                                        val filename = "${key}_${lang}.${image.rev}.${k}"
+                                        val filename = "front_${lang}.${image.rev}.${k}"
                                         val url =
                                             "https://images.openfoodfacts.org/images/products/$p1/$p2/$p3/$p4/$filename.jpg"
                                         v.w to url
                                     }
-                                } ?: emptyMap())
-                            }
+                                } ?: emptyMap()
 
                             val tags = mutableListOf("openfoodfacts")
 
@@ -120,9 +116,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                             this[ProductTable_OFF.ingredients] = p.ingredients.flatMap { map(it) }
                             this[ProductTable_OFF.allergens] = p.allergens_tags
                             this[ProductTable_OFF.traces] = p.traces_tags
-                            this[ProductTable_OFF.images] = ProductImages(
-                                images["front"] ?: emptyMap(), images["ingredients"] ?: emptyMap()
-                            )
+                            this[ProductTable_OFF.images] = ProductImages(frontImages)
                             this[ProductTable_OFF.tags] = tags
                             this[ProductTable_OFF.lastSeen] = now
                         }

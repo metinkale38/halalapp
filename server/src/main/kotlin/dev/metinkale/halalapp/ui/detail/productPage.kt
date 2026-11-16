@@ -46,14 +46,6 @@ fun HTML.productPage(product: Product, isAdmin: Boolean = false) = template(
                 src = product.images.getFrontPhoto(300)
                 onClick = "classList.toggle('imagefullscreen')"
             }
-
-//                product.images.getIngredientPhoto(300)?.let { ingredientUrl ->
-//                    img(classes = imgClasses) {
-//                        attributes.put("referrerpolicy", "no-referrer")
-//                        src = ingredientUrl
-//                        onClick = "classList.toggle('imagefullscreen')"
-//                    }
-//                }
         }
         div(classes = "space-y-6") {
 
