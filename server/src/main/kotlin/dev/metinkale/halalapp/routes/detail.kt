@@ -4,7 +4,6 @@ import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.feature.product.productPage
 import dev.metinkale.halalapp.feature.product.productPageProposal
-import dev.metinkale.halalapp.ui.detail.productNotFoundPage
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.html.*
 import io.ktor.server.plugins.*
@@ -22,7 +21,7 @@ fun Routing.detailRoutes() {
             } ?: run {
                 val entity = ProcessedProductsTable.findById(id)
                 if (entity != null) call.respondHtml { productPage(entity) }
-                else call.respondHtml(status = HttpStatusCode.NotFound) { productNotFoundPage() }
+                else call.respond(HttpStatusCode.NotFound)
             }
         }
         get("/{id}/proposal") {
@@ -31,7 +30,7 @@ fun Routing.detailRoutes() {
 
             val entity = ProcessedProductsTable.findById(id)
             if (entity != null) call.respondHtml { productPageProposal(entity) }
-            else call.respondHtml(status = HttpStatusCode.NotFound) { productNotFoundPage() }
+            else call.respond(HttpStatusCode.NotFound)
         }
     }
 }

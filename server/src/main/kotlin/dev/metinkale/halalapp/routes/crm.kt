@@ -10,10 +10,12 @@ import dev.metinkale.halalapp.server.authenticated
 import dev.metinkale.halalapp.server.ensureAdmin
 import dev.metinkale.halalapp.ui.crm.proposalOverviewPage
 import dev.metinkale.halalapp.ui.crm.proposalsPage
+import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.html.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import org.jetbrains.exposed.v1.core.eq
@@ -25,6 +27,13 @@ fun Routing.crmRoutes() = authenticated {
 
     route("/crm") {
         get {
+            ensureAdmin()
+            call.respondHtml {
+                proposalOverviewPage()
+            }
+        }
+
+        get("/") {
             ensureAdmin()
             call.respondHtml {
                 proposalOverviewPage()
@@ -65,15 +74,22 @@ fun Routing.crmRoutes() = authenticated {
                 post("/{id}/approve") {
                     ensureAdmin()
                     val id = call.parameters["id"] ?: throw NotFoundException("ID not found")
-                    ProposalsTable.approveRequest(table, id)
-                    call.respondHtml { template { card { +"Vorschlag akzeptiert." } } }
+                    try {
+                        ProposalsTable.approveRequest(table, id)
+                        call.respondHtml { template { card { +"Vorschlag genehmigt." } } }
+                    } catch (e: IllegalArgumentException) {
+                        call.respondText(e.message.orEmpty(), status = HttpStatusCode.BadRequest)
+                    }
                 }
                 post("/{id}/reject") {
                     ensureAdmin()
                     val id = call.parameters["id"] ?: throw NotFoundException("ID not found")
-                    ProposalsTable.rejectRequest(id)
-                    call.respondHtml { template { card { +"Vorschlag abgelehnt." } } }
-
+                    try {
+                        ProposalsTable.rejectRequest(id)
+                        call.respondHtml { template { card { +"Vorschlag abgelehnt." } } }
+                    } catch (e: IllegalArgumentException) {
+                        call.respondText(e.message.orEmpty(), status = HttpStatusCode.BadRequest)
+                    }
                 }
             }
 

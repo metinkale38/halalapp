@@ -20,6 +20,7 @@ fun Application.module() {
         detailRoutes()
         searchRoutes()
         crmRoutes()
+        customProductRoutes()
         deployRoutes()
     }
 }
