@@ -13,15 +13,54 @@ import dev.metinkale.halalapp.db.table.markProductsForReprocessing
 import dev.metinkale.halalapp.ui.crm.CrmLens
 import dev.metinkale.halalapp.ui.crm.getCrmFields
 import dev.metinkale.halalapp.ui.crm.readValues
+import org.jetbrains.exposed.v1.core.CustomFunction
+import org.jetbrains.exposed.v1.core.Expression
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import java.security.MessageDigest
 import java.time.LocalDate
+import kotlin.math.ceil
+
+data class CrmPageData(
+    val entries: List<Pair<String, Map<String, String>>>,
+    val totalCount: Int,
+    val page: Int,
+    val totalPages: Int,
+)
 
 object CrmAdminService {
+
+    fun <T : Entity> page(
+        table: CrmTable<T>,
+        query: String,
+        requestedPage: Int,
+        pageSize: Int,
+    ): CrmPageData = transaction {
+        ClassificationsTable.cacheAll()
+
+        val search = searchOp(table, query)
+        var queryBuilder = table.selectAll()
+        if (search != null) queryBuilder = queryBuilder.where { search }
+
+        val totalCount = queryBuilder.count().toInt()
+        val totalPages = if (totalCount == 0) 1 else ceil(totalCount.toDouble() / pageSize).toInt()
+        val page = requestedPage.coerceIn(1, totalPages)
+        val entries = queryBuilder
+            .orderBy(table.idRaw to SortOrder.ASC)
+            .limit(pageSize)
+            .offset(((page - 1) * pageSize).toLong())
+            .map { row -> row[table.id].value to table.readValues(row) }
+
+        CrmPageData(entries, totalCount, page, totalPages)
+    }
 
     fun <T : Entity> findValues(table: CrmTable<T>, id: String): Map<String, String>? = transaction {
         table.selectAll().where { table.id eq id }.singleOrNull()?.let { table.readValues(it) }
@@ -209,6 +248,33 @@ object CrmAdminService {
 
     private fun productExists(id: String): Boolean = transaction {
         ProductsTable.selectAll().where { ProductsTable.id eq id }.limit(1).any()
+    }
+
+    private fun lower(expression: Expression<String>): CustomFunction<String> =
+        CustomFunction("lower", TextColumnType(), expression)
+
+    private fun <T : Entity> searchOp(table: CrmTable<T>, query: String): Op<Boolean>? {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return null
+        val needle = "%${trimmed.lowercase()}%"
+        return when (table) {
+            ClassificationsTable ->
+                (lower(ClassificationsTable.idRaw) like needle) or
+                        (lower(ClassificationsTable.name) like needle)
+
+            IngredientsTable ->
+                (lower(IngredientsTable.idRaw) like needle) or
+                        (lower(IngredientsTable.name) like needle)
+
+            ProductInsightsTable ->
+                (lower(ProductInsightsTable.idRaw) like needle) or
+                        (lower(ProductInsightsTable.product_id) like needle) or
+                        (lower(ProductInsightsTable.content) like needle)
+
+            ProductParentTable ->
+                (lower(ProductParentTable.idRaw) like needle) or
+                        (lower(ProductParentTable.parentId) like needle)
+        }
     }
 }
 

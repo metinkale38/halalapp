@@ -22,7 +22,6 @@ import dev.metinkale.halalapp.ui.crm.paramsToValues
 import dev.metinkale.halalapp.ui.crm.proposalOverviewPage
 import dev.metinkale.halalapp.ui.crm.proposalsPage
 import dev.metinkale.halalapp.ui.crm.readValues
-import dev.metinkale.halalapp.ui.crm.searchMatches
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.html.*
@@ -34,7 +33,6 @@ import io.ktor.util.*
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
-import kotlin.math.ceil
 
 private const val CRM_PAGE_SIZE = 50
 
@@ -86,30 +84,23 @@ fun Routing.crmRoutes() = authenticated {
                     val query = call.queryParameters["q"].orEmpty().trim()
                     val requestedPage = call.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
 
-                    val allEntries = suspendTransaction {
-                        ClassificationsTable.cacheAll()
-                        table.selectAll().map { row ->
-                            val values = table.readValues(row)
-                            CrmEntryView(
-                                id = row[table.id].value,
-                                title = table.entryTitle(values),
-                                values = table.displayValues(values),
-                            )
-                        }
+                    val pageData = CrmAdminService.page(table, query, requestedPage, CRM_PAGE_SIZE)
+                    val entries = pageData.entries.map { (id, values) ->
+                        CrmEntryView(
+                            id = id,
+                            title = table.entryTitle(values),
+                            values = table.displayValues(values),
+                        )
                     }
-                    val filtered = allEntries.filter { table.searchMatches(it.values, query) }
-                    val totalPages = if (filtered.isEmpty()) 1 else ceil(filtered.size.toDouble() / CRM_PAGE_SIZE).toInt()
-                    val page = requestedPage.coerceAtMost(totalPages)
-                    val entries = filtered.drop((page - 1) * CRM_PAGE_SIZE).take(CRM_PAGE_SIZE)
 
                     call.respondHtml {
                         crmEntityListPage(
                             table = table,
                             entries = entries,
                             query = query,
-                            page = page,
-                            totalPages = totalPages,
-                            totalCount = filtered.size,
+                            page = pageData.page,
+                            totalPages = pageData.totalPages,
+                            totalCount = pageData.totalCount,
                             openProposals = ProposalsTable.numberOfOpenRequests(table),
                             saved = call.queryParameters["saved"] == "1",
                         )
