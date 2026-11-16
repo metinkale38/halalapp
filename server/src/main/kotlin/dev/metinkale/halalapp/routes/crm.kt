@@ -33,6 +33,13 @@ fun Routing.crmRoutes() = authenticated {
             }
         }
 
+        get("/") {
+            ensureAdmin()
+            call.respondHtml {
+                proposalOverviewPage()
+            }
+        }
+
         CrmTable::class.sealedSubclasses.mapNotNull { it.objectInstance }.forEach { table ->
             route("/${table.tableName}") {
                 get("/new") {
