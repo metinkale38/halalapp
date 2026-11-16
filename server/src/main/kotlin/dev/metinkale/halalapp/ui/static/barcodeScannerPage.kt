@@ -21,7 +21,7 @@ private const val SWITCH_CAMERA_ICON =
 
 fun HTML.barcodeScannerPage() = template(
     title = "HalalApp - Barcode scannen",
-    head = { script { src = "/libs/html5-qrcode/html5-qrcode.min.js" } },
+    head = { script { src = "/libs/html5-qrcode/html5-qrcode.min.js"; defer = true } },
     titleBlock = {
         h2 { +"Barcode scannen" }
     }) {
@@ -83,5 +83,8 @@ fun HTML.barcodeScannerPage() = template(
     p("text-center text-sm text-gray-600") {
         +"Die Kamera startet automatisch. Erlaube dazu den Kamerazugriff im Browser."
     }
-    script { src = "/barcode.js" }
+    script {
+        src = "/barcode.js"
+        defer = true
+    }
 }

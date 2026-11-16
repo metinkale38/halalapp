@@ -43,6 +43,9 @@
     let switching = false;
     let handlingResult = false;
     let hintTimeout = null;
+    let wakeLock = null;
+    let pausedByVisibility = false;
+    let stopForVisibility = Promise.resolve();
 
     function isBackCamera(camera) {
         return /(back|rear|environment|hinten|rück)/i.test(camera.label || "");
@@ -71,11 +74,36 @@
         }, 4000);
     }
 
+    async function requestWakeLock() {
+        if (!navigator.wakeLock || document.visibilityState !== "visible" || wakeLock) return;
+
+        try {
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeLock.addEventListener("release", function () {
+                wakeLock = null;
+            });
+        } catch (error) {
+            wakeLock = null;
+        }
+    }
+
+    async function releaseWakeLock() {
+        if (!wakeLock) return;
+
+        const lock = wakeLock;
+        wakeLock = null;
+        try {
+            await lock.release();
+        } catch (error) {
+        }
+    }
+
     function showError(text) {
         setStatus(null);
         if (hintElement) hintElement.style.display = "none";
         if (errorTextElement) errorTextElement.textContent = text;
         if (errorElement) errorElement.style.display = "flex";
+        releaseWakeLock();
         resetControls();
     }
 
@@ -147,6 +175,14 @@
 
     async function onCameraStarted() {
         setStatus(null);
+
+        if (document.hidden) {
+            pausedByVisibility = true;
+            handlingResult = false;
+            stopForVisibility = scanner.stop().catch(function () {});
+            return;
+        }
+
         showHint();
 
         await refreshCameras();
@@ -160,6 +196,7 @@
         }
 
         await updateTorchButton();
+        await requestWakeLock();
     }
 
     function showStartError(error) {
@@ -185,18 +222,7 @@
         showError(message);
     }
 
-    async function startInitialCamera() {
-        if (switching) return;
-
-        handlingResult = false;
-        hideError();
-        resetControls();
-
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            showError("Dein Browser unterstützt keinen Kamerazugriff. Bitte verwende eine aktuelle Version über HTTPS.");
-            return;
-        }
-
+    async function startCamera(constraints) {
         setStatus("Kamera wird gestartet…");
 
         try {
@@ -205,7 +231,7 @@
                 await html5Qrcode.stop();
             }
             await html5Qrcode.start(
-                { facingMode: "environment" },
+                constraints,
                 scanConfig,
                 onDetection,
                 function () {}
@@ -216,6 +242,38 @@
         }
 
         await onCameraStarted();
+    }
+
+    async function startInitialCamera() {
+        if (switching) return;
+
+        handlingResult = false;
+        pausedByVisibility = false;
+        hideError();
+        resetControls();
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showError("Dein Browser unterstützt keinen Kamerazugriff. Bitte verwende eine aktuelle Version über HTTPS.");
+            return;
+        }
+
+        await startCamera({ facingMode: "environment" });
+    }
+
+    async function resumeCameraAfterVisibility() {
+        if (!pausedByVisibility) return;
+
+        pausedByVisibility = false;
+        handlingResult = false;
+        await stopForVisibility;
+        hideError();
+        resetControls();
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            return;
+        }
+
+        await startCamera({ facingMode: currentFacing });
     }
 
     async function toggleTorch() {
@@ -270,6 +328,12 @@
             }
 
             await updateTorchButton();
+
+            if (document.hidden) {
+                pausedByVisibility = true;
+                handlingResult = false;
+                stopForVisibility = scanner.stop().catch(function () {});
+            }
         } catch (error) {
             showStartError(error);
         } finally {
@@ -284,6 +348,7 @@
 
         if (navigator.vibrate) navigator.vibrate(80);
         setStatus("Barcode erkannt…");
+        releaseWakeLock();
 
         const target = "/product/" + encodeURIComponent(decodedText);
         const navigate = function () {
@@ -306,6 +371,19 @@
     if (retryButton) {
         retryButton.addEventListener("click", startInitialCamera);
     }
+
+    document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+            if (scanner && scanner.isScanning && !switching) {
+                pausedByVisibility = true;
+                handlingResult = false;
+                releaseWakeLock();
+                stopForVisibility = scanner.stop().catch(function () {});
+            }
+        } else {
+            resumeCameraAfterVisibility();
+        }
+    });
 
     startInitialCamera();
 })();

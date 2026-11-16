@@ -16,8 +16,12 @@ fun HTML.productNotFoundPage() = template("Produkt nicht gefunden - HalalApp") {
             +"Tut uns leid, wir konnten das gewünschte Produkt oder die Seite in unserer Datenbank nicht finden. Bitte überprüfe den Barcode oder kehre zur Startseite zurück."
         }
 
-        div(classes = "flex gap-4") {
-            a(classes = "px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors") {
+        div(classes = "flex flex-wrap justify-center gap-4") {
+            a(classes = "px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-600 transition-colors") {
+                href = "/scan"
+                +"Erneut scannen"
+            }
+            a(classes = "px-6 py-3 bg-gray-200 text-gray-900 font-semibold rounded-xl hover:bg-gray-300 transition-colors") {
                 href = "/"
                 +"Zurück zur Startseite"
             }

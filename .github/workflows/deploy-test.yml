@@ -1,26 +1,36 @@
 name: Deploy to Test
 
 on:
-  workflow_run:
-    workflows: ["Build"]
-    types: [completed]
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull-Request-Nummer
+        required: true
+        type: number
+
+concurrency:
+  group: deploy-test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy-test:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'deploy-test'
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
-    if: >
-      github.event.workflow_run.conclusion == 'success' && 
-      github.event.workflow_run.head_branch == 'main'
+      pull-requests: read
     steps:
-      - name: Download Artifact from last Build
-        uses: dawidd6/action-download-artifact@v2
+      - name: Download Artifact from PR Build
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: build.yml
-          branch: main
+          pr: ${{ github.event.pull_request.number || github.event.inputs.pr }}
           name: server-jar
+          workflow_conclusion: success
+          check_artifacts: true
 
       - name: Deploy to Test Server
         env:
