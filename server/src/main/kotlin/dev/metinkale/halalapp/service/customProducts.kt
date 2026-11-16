@@ -47,7 +47,6 @@ data class CustomProductSubmission(
     val note: String,
     val creator: String,
     val front: UploadedImageInput?,
-    val ingredients: UploadedImageInput?,
 )
 
 data class CustomProductEdit(
@@ -55,9 +54,7 @@ data class CustomProductEdit(
     val name: String,
     val brand: String,
     val front: UploadedImageInput?,
-    val ingredients: UploadedImageInput?,
     val removeFront: Boolean,
-    val removeIngredients: Boolean,
     val editor: String,
 )
 
@@ -93,7 +90,6 @@ object CustomProductService {
         }
 
         val front = input.front?.let { it to ProductImageService.process(it.bytes, it.mime) }
-        val ingredients = input.ingredients?.let { it to ProductImageService.process(it.bytes, it.mime) }
 
         return transaction {
             val json = mapOf(
@@ -125,17 +121,6 @@ object CustomProductService {
                     createdBy = input.creator,
                 )
             }
-            ingredients?.let {
-                insertImage(
-                    proposalId = proposalId,
-                    productId = null,
-                    kind = ProductImageKind.INGREDIENTS,
-                    status = ProductImageStatus.PENDING,
-                    upload = it.second,
-                    createdBy = input.creator,
-                )
-            }
-
             proposalId
         }
     }
@@ -201,7 +186,7 @@ object CustomProductService {
                 it[ProductsCustomTable.ingredientsText] = ""
                 it[ProductsCustomTable.images] = ProductImages(
                     front = imageUrlsFor(images, ProductImageKind.FRONT),
-                    ingredients = imageUrlsFor(images, ProductImageKind.INGREDIENTS),
+                    ingredients = emptyMap(),
                 )
                 it[ProductsCustomTable.tags] = emptyList()
                 it[ProductsCustomTable.traces] = emptyList()
@@ -251,7 +236,6 @@ object CustomProductService {
         val name = input.name.trim().also { require(it.isNotBlank()) { "Produktname ist erforderlich." } }
         val brand = input.brand.trim().also { require(it.isNotBlank()) { "Marke ist erforderlich." } }
         val frontUpload = input.front?.let { ProductImageService.process(it.bytes, it.mime) }
-        val ingredientsUpload = input.ingredients?.let { ProductImageService.process(it.bytes, it.mime) }
 
         transaction {
             ProductsCustomTable.selectAll().where { ProductsCustomTable.id eq barcode }
@@ -259,15 +243,14 @@ object CustomProductService {
             val existingImages = ProductImagesTable.findByProduct(barcode)
 
             var front = existingImages.filter { it.kind == ProductImageKind.FRONT }
-            var ingredientImages = existingImages.filter { it.kind == ProductImageKind.INGREDIENTS }
+            val ingredientImages = existingImages.filter { it.kind == ProductImageKind.INGREDIENTS }
 
             if (input.removeFront || frontUpload != null) {
                 ProductImagesTable.markStatus(front.map { it.id }, ProductImageStatus.REPLACED)
                 front = emptyList()
             }
-            if (input.removeIngredients || ingredientsUpload != null) {
+            if (ingredientImages.isNotEmpty()) {
                 ProductImagesTable.markStatus(ingredientImages.map { it.id }, ProductImageStatus.REPLACED)
-                ingredientImages = emptyList()
             }
 
             val frontUrls = imageUrlsFor(front, ProductImageKind.FRONT) +
@@ -282,22 +265,10 @@ object CustomProductService {
                         )
                     } ?: emptyMap())
 
-            val ingredientUrls = imageUrlsFor(ingredientImages, ProductImageKind.INGREDIENTS) +
-                    (ingredientsUpload?.let {
-                        insertImage(
-                            proposalId = null,
-                            productId = barcode,
-                            kind = ProductImageKind.INGREDIENTS,
-                            status = ProductImageStatus.ATTACHED,
-                            upload = it,
-                            createdBy = input.editor,
-                        )
-                    } ?: emptyMap())
-
             ProductsCustomTable.update({ ProductsCustomTable.id eq barcode }) {
                 it[ProductsCustomTable.name] = name
                 it[ProductsCustomTable.brand] = brand
-                it[ProductsCustomTable.images] = ProductImages(frontUrls, ingredientUrls)
+                it[ProductsCustomTable.images] = ProductImages(frontUrls, emptyMap())
             }
         }
         reprocess(barcode)

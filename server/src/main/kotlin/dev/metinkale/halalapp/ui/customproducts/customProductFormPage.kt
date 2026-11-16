@@ -19,15 +19,47 @@ data class CustomProductFormData(
     val note: String = "",
 )
 
+fun HTML.customProductBarcodePage(
+    barcode: String = "",
+    error: String? = null,
+) = template(
+    "Produkt vorschlagen - HalalApp",
+    titleBlock = {
+        h2 { +"Produkt vorschlagen" }
+        h4 { +"Barcode eingeben" }
+    },
+) {
+    card("m-auto w-full max-w-xl") {
+        error?.let {
+            div(classes = "mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700") {
+                +it
+            }
+        }
+        form(action = "/crm/products_custom/new", method = FormMethod.get) {
+            formGroup {
+                label {
+                    span(classes = "text-sm font-medium text-gray-700 mb-1") { +"Barcode" }
+                    input(classes = "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") {
+                        name = "id"
+                        value = barcode
+                        required = true
+                        attributes["inputmode"] = "numeric"
+                        placeholder = "z. B. 4000521033736"
+                    }
+                }
+                submitButton("Weiter")
+            }
+        }
+    }
+}
+
 fun HTML.customProductFormPage(
     data: CustomProductFormData,
     animalOptions: List<Pair<String, String>>,
     alcoholOptions: List<Pair<String, String>>,
     editing: Boolean = false,
     existingFrontUrl: String? = null,
-    existingIngredientsUrl: String? = null,
     error: String? = null,
-    barcodeReadOnly: Boolean = false,
 ) = template(
     if (editing) "Custom-Produkt bearbeiten - HalalApp" else "Produkt vorschlagen - HalalApp",
     head = { loadEasyMDE() },
@@ -57,7 +89,7 @@ fun HTML.customProductFormPage(
                         name = "id"
                         value = data.barcode
                         required = true
-                        readonly = barcodeReadOnly || editing
+                        readonly = true
                         placeholder = "z. B. 4000521033736"
                     }
                 }
@@ -130,14 +162,6 @@ fun HTML.customProductFormPage(
                     previewId = "front-preview",
                     existingUrl = existingFrontUrl,
                     removalName = if (editing && existingFrontUrl != null) "removeFront" else null,
-                )
-
-                photoField(
-                    label = "Zutatenfoto (optional)",
-                    name = "ingredients",
-                    previewId = "ingredients-preview",
-                    existingUrl = existingIngredientsUrl,
-                    removalName = if (editing && existingIngredientsUrl != null) "removeIngredients" else null,
                 )
 
                 if (!editing) {

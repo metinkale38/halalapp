@@ -18,6 +18,7 @@ import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.customproducts.CustomProductFormData
 import dev.metinkale.halalapp.ui.customproducts.customProductAdminPage
+import dev.metinkale.halalapp.ui.customproducts.customProductBarcodePage
 import dev.metinkale.halalapp.ui.customproducts.customProductFormPage
 import io.ktor.http.*
 import io.ktor.http.content.PartData
@@ -59,11 +60,20 @@ fun Routing.customProductRoutes() {
                 ?: call.request.queryParameters["barcode"]
                 ?: ""
             call.respondHtml {
-                customProductFormPage(
-                    data = CustomProductFormData(barcode = barcode),
-                    animalOptions = CustomProductService.classificationOptions(animal = true),
-                    alcoholOptions = CustomProductService.classificationOptions(animal = false),
-                )
+                if (barcode.isBlank()) {
+                    customProductBarcodePage()
+                } else {
+                    try {
+                        CustomProductService.validateBarcode(barcode)
+                        customProductFormPage(
+                            data = CustomProductFormData(barcode = barcode),
+                            animalOptions = CustomProductService.classificationOptions(animal = true),
+                            alcoholOptions = CustomProductService.classificationOptions(animal = false),
+                        )
+                    } catch (e: IllegalArgumentException) {
+                        customProductBarcodePage(barcode, e.message)
+                    }
+                }
             }
         }
 
@@ -83,7 +93,6 @@ fun Routing.customProductRoutes() {
                         note = form.first("note"),
                         creator = call.userIdentity(),
                         front = form.files["front"],
-                        ingredients = form.files["ingredients"],
                     )
                 )
                 call.respondHtml {
@@ -106,7 +115,6 @@ fun Routing.customProductRoutes() {
                         data = form.toFormData(),
                         animalOptions = CustomProductService.classificationOptions(animal = true),
                         alcoholOptions = CustomProductService.classificationOptions(animal = false),
-                        barcodeReadOnly = false,
                         error = e.message,
                     )
                 }
@@ -136,10 +144,6 @@ fun Routing.customProductRoutes() {
                     ProductImageFilesTable.metadataByImage(image.id).minByOrNull { it.second }
                         ?.let { "/image/${it.first}" }
                 }
-                val ingredients = images.firstOrNull { it.kind == ProductImageKind.INGREDIENTS }?.let { image ->
-                    ProductImageFilesTable.metadataByImage(image.id).minByOrNull { it.second }
-                        ?.let { "/image/${it.first}" }
-                }
                 call.respondHtml {
                     customProductFormPage(
                         data = CustomProductFormData(
@@ -151,7 +155,6 @@ fun Routing.customProductRoutes() {
                         alcoholOptions = CustomProductService.classificationOptions(animal = false),
                         editing = true,
                         existingFrontUrl = front,
-                        existingIngredientsUrl = ingredients,
                     )
                 }
             }
@@ -167,9 +170,7 @@ fun Routing.customProductRoutes() {
                             name = form.first("name"),
                             brand = form.first("brand"),
                             front = form.files["front"],
-                            ingredients = form.files["ingredients"],
                             removeFront = form.first("removeFront") == "true",
-                            removeIngredients = form.first("removeIngredients") == "true",
                             editor = call.userIdentity(),
                         )
                     )
@@ -237,7 +238,7 @@ private suspend fun ApplicationCall.readProductForm(): ParsedProductForm {
 
             is PartData.FileItem -> {
                 val name = part.name ?: ""
-                if ((name == "front" || name == "ingredients") && !part.originalFileName.isNullOrBlank()) {
+                if (name == "front" && !part.originalFileName.isNullOrBlank()) {
                     val bytes = part.provider().toInputStream().use {
                         it.readNBytes(ProductImageService.MAX_BYTES + 1)
                     }
