@@ -60,6 +60,7 @@ object ProposalsTable : EntityTable<Proposal>("proposals") {
                         field.write(it, json[field.name]!!)
                     }
                 }
+            markProductsForReprocessing(crmTable, json)
         }
     }
 
