@@ -19,6 +19,7 @@ import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.customproducts.CustomProductFormData
 import dev.metinkale.halalapp.ui.customproducts.customProductAdminPage
 import dev.metinkale.halalapp.ui.customproducts.customProductFormPage
+import dev.metinkale.halalapp.ui.customproducts.customProductListPage
 import io.ktor.http.*
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -30,6 +31,7 @@ import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.header
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondRedirect
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.*
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.html.*
@@ -122,9 +124,15 @@ fun Routing.customProductRoutes() {
                 call.respondHtml {
                     customProductAdminPage(
                         proposals = CustomProductService.findProposals(),
-                        products = ProductsCustomTable.allProducts(),
                         classificationNames = ClassificationsTable.all().associate { it.id to it.name },
                     )
+                }
+            }
+
+            get("/manage") {
+                ensureAdmin()
+                call.respondHtml {
+                    customProductListPage(ProductsCustomTable.allProducts())
                 }
             }
 
@@ -192,28 +200,21 @@ fun Routing.customProductRoutes() {
                 val id = call.parameters["id"] ?: throw NotFoundException("ID not found")
                 try {
                     CustomProductService.approve(id)
-                    call.respondRedirect("/crm/products_custom")
+                    call.respondHtml { template { card { +"Custom-Produkt genehmigt." } } }
                 } catch (e: IllegalArgumentException) {
-                    call.respondHtml {
-                        template {
-                            card {
-                                h3(classes = "text-lg font-bold text-red-700") { +"Genehmigung fehlgeschlagen" }
-                                p(classes = "text-sm text-gray-600") { +(e.message.orEmpty()) }
-                                a(classes = "mt-3 inline-block text-sm font-semibold text-indigo-600 hover:underline") {
-                                    href = "/crm/products_custom"
-                                    +"Zurück"
-                                }
-                            }
-                        }
-                    }
+                    call.respondText(e.message.orEmpty(), status = HttpStatusCode.BadRequest)
                 }
             }
 
             post("/{id}/reject") {
                 ensureAdmin()
                 val id = call.parameters["id"] ?: throw NotFoundException("ID not found")
-                CustomProductService.reject(id)
-                call.respondRedirect("/crm/products_custom")
+                try {
+                    CustomProductService.reject(id)
+                    call.respondHtml { template { card { +"Vorschlag abgelehnt." } } }
+                } catch (e: IllegalArgumentException) {
+                    call.respondText(e.message.orEmpty(), status = HttpStatusCode.BadRequest)
+                }
             }
         }
     }

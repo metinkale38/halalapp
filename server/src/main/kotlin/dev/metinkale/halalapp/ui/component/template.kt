@@ -44,7 +44,7 @@ fun HTML.template(
             rel = "stylesheet"
             href = "/style.css"
         }
-        script { src = "/script.js" }
+        script { src = "/script.js?v=2" }
         title(title)
 
         meta {
