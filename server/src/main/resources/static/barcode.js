@@ -155,17 +155,48 @@
         switchCameraButton.classList.toggle("hidden", cameras.length <= 1);
     }
 
+    function getVideoTrack() {
+        const video = scannerElement.querySelector("video");
+        const stream = video && video.srcObject;
+        return stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+    }
+
+    function supportsTorch(track) {
+        if (!track || !track.getCapabilities) return false;
+
+        try {
+            const capabilities = track.getCapabilities();
+            return capabilities.torch === true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async function waitForTorchSupport() {
+        for (let attempt = 0; attempt < 5; attempt++) {
+            if (supportsTorch(getVideoTrack())) return true;
+            if (attempt < 4) {
+                await new Promise(function (resolve) {
+                    setTimeout(resolve, 200);
+                });
+            }
+        }
+        return false;
+    }
+
+    let torchCheckId = 0;
+
     async function updateTorchButton() {
         if (!scanner || !scanner.isScanning) return;
 
-        try {
-            const capabilities = scanner.getRunningTrackCapabilities();
-            torchSupported = !!(capabilities && capabilities.torch);
-        } catch (error) {
-            torchSupported = false;
-        }
+        const checkId = ++torchCheckId;
+        const supported = await waitForTorchSupport();
 
+        if (checkId !== torchCheckId || !scanner || !scanner.isScanning) return;
+
+        torchSupported = supported;
         if (!torchButton) return;
+
         torchButton.classList.toggle("hidden", !torchSupported);
         if (!torchSupported) {
             torchEnabled = false;
@@ -283,7 +314,12 @@
         torchButton.disabled = true;
 
         try {
-            await scanner.applyVideoConstraints({ advanced: [{ torch: nextState }] });
+            const track = getVideoTrack();
+            if (track && track.applyConstraints) {
+                await track.applyConstraints({ advanced: [{ torch: nextState }] });
+            } else {
+                await scanner.applyVideoConstraints({ advanced: [{ torch: nextState }] });
+            }
             torchEnabled = nextState;
             torchButton.setAttribute("aria-pressed", String(nextState));
         } catch (error) {
