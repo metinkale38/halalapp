@@ -22,6 +22,17 @@ fun <T : Entity> HTML.proposalsPage(table: CrmTable<T>) {
             h4 { +table.germanName }
         },
     ) {
+        div(classes = "flex flex-wrap gap-2") {
+            a(classes = "btn-secondary") {
+                href = "/crm/${table.tableName}"
+                +"← Einträge"
+            }
+            a(classes = "btn-secondary") {
+                href = "/crm/${table.tableName}/history"
+                +"Verlauf"
+            }
+        }
+
         p(classes = "text-sm text-gray-600") {
             +"Prüfe die eingereichten Änderungen. Nach dem Genehmigen oder Ablehnen verschwindet der Vorschlag automatisch."
         }

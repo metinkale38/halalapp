@@ -16,7 +16,7 @@ fun JdbcTransaction.markProductsForReprocessing(crmTable: CrmTable<*>, json: Map
         ClassificationsTable -> json["id"]?.takeIf { it.isNotBlank() }?.let { markClassificationProducts(it) }
         IngredientsTable -> json["id"]?.takeIf { it.isNotBlank() }?.let { markIngredientProducts(it) }
         ProductInsightsTable -> json["product_id"]?.takeIf { it.isNotBlank() }?.let { markProductForReprocessing(it) }
-        ProductParentTable -> Unit
+        ProductParentTable -> json["child_id"]?.takeIf { it.isNotBlank() }?.let { markProductForReprocessing(it) }
     }
 }
 

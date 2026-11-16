@@ -16,9 +16,15 @@ fun HTML.customProductListPage(products: List<CustomProduct>) = template(
         p(classes = "text-sm text-gray-600") {
             +"Bearbeite Name, Marke oder Frontfoto bestehender Custom-Produkte."
         }
-        a(classes = "btn-secondary") {
-            href = "/crm/products_custom"
-            +"Zu den Vorschlägen"
+        div(classes = "flex flex-wrap gap-2") {
+            a(classes = "btn-secondary") {
+                href = "/crm/products_custom"
+                +"Zu den Vorschlägen"
+            }
+            a(classes = "btn-secondary") {
+                href = "/crm/products_custom/history"
+                +"Verlauf"
+            }
         }
     }
 

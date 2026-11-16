@@ -16,19 +16,19 @@ fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any>> {
             Text("Name", "name", ClassificationsTable.name),
             CheckBox("Betrifft tierische Zutaten", "animal", ClassificationsTable.animal),
             CheckBox("Betrifft berauschende Zutaten", "alcohol", ClassificationsTable.alcohol),
-            Text("Url", "url", ClassificationsTable.url),
+            Text("URL", "url", ClassificationsTable.url),
             Select(
                 "Status",
                 "status",
                 Status.entries.filter { it != Status.INCOMPLETE }.map { it.name to it.value },
                 ClassificationsTable.status,
-                { this[ClassificationsTable.status].value },
+                { this[ClassificationsTable.status].name },
                 { this[ClassificationsTable.status] = Status.valueOf(it) }
             )
         )
 
         IngredientsTable -> listOf(
-            StaticText("ID", "id", ClassificationsTable.idRaw),
+            StaticText("ID", "id", IngredientsTable.idRaw),
             Text("Name", "name", IngredientsTable.name),
             Select(
                 "Einstufung",
@@ -45,7 +45,7 @@ fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any>> {
         ProductInsightsTable -> listOf(
             StaticText("Barcode", "product_id", ProductInsightsTable.product_id),
             Markdown("Inhalt", "content", ProductInsightsTable.content),
-            Date("Date", "date", ProductInsightsTable.date),
+            Date("Datum", "date", ProductInsightsTable.date),
             MultiSelect(
                 "Tierisch",
                 "animal",

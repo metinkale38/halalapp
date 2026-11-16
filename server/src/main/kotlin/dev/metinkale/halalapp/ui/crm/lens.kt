@@ -2,7 +2,7 @@ package dev.metinkale.halalapp.ui.crm
 
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.statements.InsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import java.time.LocalDate
 
 sealed interface CrmLens<T> {
@@ -12,7 +12,7 @@ sealed interface CrmLens<T> {
     val col: Column<T>
 
     fun read(row: ResultRow): String
-    fun write(stmt: InsertStatement<*>, value: String)
+    fun write(stmt: UpdateBuilder<*>, value: String)
 
     open class StaticText(
         override val label: String,
@@ -20,7 +20,7 @@ sealed interface CrmLens<T> {
         override val col: Column<String>,
     ) : CrmLens<String> {
         override fun read(row: ResultRow): String = row[col]
-        override fun write(stmt: InsertStatement<*>, value: String) {
+        override fun write(stmt: UpdateBuilder<*>, value: String) {
             stmt[col] = value
         }
     }
@@ -31,7 +31,7 @@ sealed interface CrmLens<T> {
         override val col: Column<String>,
     ) : CrmLens<String> {
         override fun read(row: ResultRow): String = row[col]
-        override fun write(stmt: InsertStatement<*>, value: String) {
+        override fun write(stmt: UpdateBuilder<*>, value: String) {
             stmt[col] = value
         }
     }
@@ -43,7 +43,7 @@ sealed interface CrmLens<T> {
         override val col: Column<LocalDate>,
     ) : CrmLens<LocalDate> {
         override fun read(row: ResultRow): String = row[col].toString()
-        override fun write(stmt: InsertStatement<*>, value: String) {
+        override fun write(stmt: UpdateBuilder<*>, value: String) {
             stmt[col] = LocalDate.parse(value)
         }
     }
@@ -55,7 +55,7 @@ sealed interface CrmLens<T> {
         override val col: Column<String>,
     ) : CrmLens<String> {
         override fun read(row: ResultRow): String = row[col]
-        override fun write(stmt: InsertStatement<*>, value: String) {
+        override fun write(stmt: UpdateBuilder<*>, value: String) {
             stmt[col] = value
         }
     }
@@ -66,7 +66,7 @@ sealed interface CrmLens<T> {
         override val col: Column<Boolean>,
     ) : CrmLens<Boolean> {
         override fun read(row: ResultRow): String = row[col].toString()
-        override fun write(stmt: InsertStatement<*>, value: String) {
+        override fun write(stmt: UpdateBuilder<*>, value: String) {
             stmt[col] = value == "true"
         }
     }
@@ -77,10 +77,10 @@ sealed interface CrmLens<T> {
         val options: List<Pair<String, String>>,
         override val col: Column<T>,
         val _read: ResultRow.() -> String,
-        val _write: InsertStatement<*>.(String) -> Unit,
+        val _write: UpdateBuilder<*>.(String) -> Unit,
     ) : CrmLens<T> {
         override fun read(row: ResultRow): String = _read(row)
-        override fun write(stmt: InsertStatement<*>, value: String) {
+        override fun write(stmt: UpdateBuilder<*>, value: String) {
             _write(stmt, value)
         }
     }
@@ -91,15 +91,15 @@ sealed interface CrmLens<T> {
         val options: List<Pair<String, String>>,
         override val col: Column<List<T>>,
         val _read: ResultRow.() -> List<String>,
-        val _write: InsertStatement<*>.(List<String>) -> Unit,
+        val _write: UpdateBuilder<*>.(List<String>) -> Unit,
     ) : CrmLens<List<T>> {
         override fun read(row: ResultRow): String = _read(row).joinToString(";")
 
         override fun write(
-            stmt: InsertStatement<*>,
+            stmt: UpdateBuilder<*>,
             value: String,
         ) {
-            _write(stmt, value.split(";"))
+            _write(stmt, value.split(";").filter { it.isNotBlank() })
         }
     }
 }
