@@ -36,7 +36,7 @@ fun HTML.customProductListPage(products: List<CustomProduct>) = template(
         div(classes = "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3") {
             products.forEach { product ->
                 card("flex flex-row gap-3 items-center !p-3") {
-                    val photo = product.images.getFrontPhoto(100)
+                    val photo = product.images.getFrontPhoto(0)
                         .let { if (it == "/nophoto.webp") "/nophoto.100.webp" else it }
                     div(classes = "h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100") {
                         img(classes = "h-16 w-16 object-cover") {

@@ -1,8 +1,6 @@
 package dev.metinkale.halalapp.routes
 
-import dev.metinkale.halalapp.db.entity.ProductImageStatus
 import dev.metinkale.halalapp.db.table.ClassificationsTable
-import dev.metinkale.halalapp.db.table.ProductImageFilesTable
 import dev.metinkale.halalapp.db.table.ProductImagesTable
 import dev.metinkale.halalapp.db.table.ProductsCustomTable
 import dev.metinkale.halalapp.db.table.ProposalsTable
@@ -29,7 +27,6 @@ import io.ktor.server.auth.principal
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receiveMultipart
-import io.ktor.server.response.header
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
@@ -48,15 +45,14 @@ private data class ParsedProductForm(
 
 fun Routing.customProductRoutes() {
     get("/image/{id}") {
-        respondImage(call, call.parameters["id"], allowPending = false)
+        respondStoredImage(call, call.parameters["id"], thumbnail = false)
+    }
+
+    get("/image/{id}/thumb") {
+        respondStoredImage(call, call.parameters["id"], thumbnail = true)
     }
 
     authenticated {
-        get("/crm/image/{id}") {
-            ensureAdmin()
-            respondImage(call, call.parameters["id"], allowPending = true)
-        }
-
         get("/crm/products_custom/new") {
             val barcode = call.request.queryParameters["id"]
                 ?: call.request.queryParameters["barcode"]
@@ -121,7 +117,6 @@ fun Routing.customProductRoutes() {
         route("/crm/products_custom") {
             get {
                 ensureAdmin()
-                CustomProductService.cleanupOldImages()
                 call.respondHtml {
                     customProductAdminPage(
                         proposals = CustomProductService.findProposals(),
@@ -151,11 +146,7 @@ fun Routing.customProductRoutes() {
                 val id = call.parameters["id"] ?: throw NotFoundException("ID not found")
                 val product = ProductsCustomTable.findById(id)
                     ?: throw NotFoundException("Custom-Produkt nicht gefunden")
-                val images = ProductImagesTable.findByProduct(id)
-                val front = images.firstOrNull()?.let { image ->
-                    ProductImageFilesTable.metadataByImage(image.id).minByOrNull { it.second }
-                        ?.let { "/image/${it.first}" }
-                }
+                val front = product.images.getFrontPhoto(300).takeIf { it != "/nophoto.webp" }
                 call.respondHtml {
                     customProductFormPage(
                         data = CustomProductFormData(
@@ -284,18 +275,11 @@ private fun ApplicationCall.userIdentity(): String {
     return user?.email?.takeIf { it.isNotBlank() } ?: user?.username ?: "Unbekannt"
 }
 
-private suspend fun respondImage(call: ApplicationCall, fileId: String?, allowPending: Boolean) {
-    val id = fileId ?: throw NotFoundException("Bild nicht gefunden")
-    val file = ProductImageFilesTable.findById(id) ?: throw NotFoundException("Bild nicht gefunden")
-    val image = ProductImagesTable.findById(file.imageId) ?: throw NotFoundException("Bild nicht gefunden")
-
-    val visible = if (allowPending) {
-        image.status in setOf(ProductImageStatus.ATTACHED, ProductImageStatus.PENDING)
-    } else {
-        image.status == ProductImageStatus.ATTACHED
-    }
-    if (!visible) throw NotFoundException("Bild nicht gefunden")
-
-    call.response.header(HttpHeaders.ETag, "\"${file.sha256}\"")
-    call.respondBytes(file.data, ContentType.parse(file.mime))
+private suspend fun respondStoredImage(call: ApplicationCall, productId: String?, thumbnail: Boolean) {
+    val id = productId ?: throw NotFoundException("Bild nicht gefunden")
+    val images = ProductImagesTable.find(id) ?: throw NotFoundException("Bild nicht gefunden")
+    call.respondBytes(
+        if (thumbnail) images.first else images.second,
+        ContentType.parse("image/jpeg"),
+    )
 }

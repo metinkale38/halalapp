@@ -2,12 +2,8 @@ package dev.metinkale.halalapp.service
 
 import dev.metinkale.halalapp.db.entity.CustomProductProposal
 import dev.metinkale.halalapp.db.entity.ProductComponent
-import dev.metinkale.halalapp.db.entity.ProductImage
-import dev.metinkale.halalapp.db.entity.ProductImagePreview
-import dev.metinkale.halalapp.db.entity.ProductImageStatus
 import dev.metinkale.halalapp.db.entity.ProductImages
 import dev.metinkale.halalapp.db.table.ClassificationsTable
-import dev.metinkale.halalapp.db.table.ProductImageFilesTable
 import dev.metinkale.halalapp.db.table.ProductImagesTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
 import dev.metinkale.halalapp.db.table.ProductsCustomTable
@@ -25,7 +21,6 @@ import org.jetbrains.exposed.v1.jdbc.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
-import java.util.UUID
 
 const val CUSTOM_PRODUCT_ENTITY = "products_custom"
 
@@ -84,20 +79,23 @@ object CustomProductService {
             "Für dieses Produkt gibt es bereits einen offenen Vorschlag."
         }
 
-        val front = input.front?.let { it to ProductImageService.process(it.bytes, it.mime) }
+        val image = input.front?.let {
+            ProductImageService.dataUri(ProductImageService.process(it.bytes, it.mime).jpeg)
+        }
 
         return transaction {
-            val json = mapOf(
-                "id" to barcode,
-                "name" to name,
-                "brand" to brand,
-                "insightContent" to content,
-                "insightDate" to input.insightDate.toString(),
-                "animal" to animal.joinToString(";"),
-                "alcohol" to alcohol.joinToString(";"),
-            )
+            val json = buildMap {
+                put("id", barcode)
+                put("name", name)
+                put("brand", brand)
+                put("insightContent", content)
+                put("insightDate", input.insightDate.toString())
+                put("animal", animal.joinToString(";"))
+                put("alcohol", alcohol.joinToString(";"))
+                image?.let { put("frontImage", it) }
+            }
 
-            val proposalId = ProposalsTable.insertReturning(listOf(ProposalsTable.id)) {
+            ProposalsTable.insertReturning(listOf(ProposalsTable.id)) {
                 it[ProposalsTable.entityType] = CUSTOM_PRODUCT_ENTITY
                 it[ProposalsTable.json] = json
                 it[ProposalsTable.note] = input.note.trim()
@@ -105,17 +103,6 @@ object CustomProductService {
                 it[ProposalsTable.status] = RequestStatus.PENDING
                 it[ProposalsTable.date] = Instant.now()
             }.first()[ProposalsTable.id].value
-
-            front?.let {
-                insertImage(
-                    proposalId = proposalId,
-                    productId = null,
-                    status = ProductImageStatus.PENDING,
-                    upload = it.second,
-                    createdBy = input.creator,
-                )
-            }
-            proposalId
         }
     }
 
@@ -142,9 +129,7 @@ object CustomProductService {
                 creator = proposal.creator,
                 status = proposal.status,
                 date = proposal.date,
-                imagePreviews = ProductImagesTable.findByProposal(proposal.id).map { image ->
-                    ProductImagePreview(image, ProductImageFilesTable.metadataByImage(image.id))
-                },
+                imageDataUri = json["frontImage"],
             )
         }
     }
@@ -169,7 +154,12 @@ object CustomProductService {
                 "Dieses Produkt existiert inzwischen bereits in der HalalApp."
             }
 
-            val images = ProductImagesTable.findByProposal(proposalId)
+            val images = json["frontImage"]?.let { dataUri ->
+                val full = ProductImageService.decodeDataUri(dataUri)
+                val thumbnail = ProductImageService.thumbnail(full)
+                ProductImagesTable.put(barcode, thumbnail, full)
+                productImagesJson(barcode, thumbnail, full)
+            } ?: ProductImages()
 
             ProductsCustomTable.insert {
                 it[ProductsCustomTable.id] = barcode
@@ -177,7 +167,7 @@ object CustomProductService {
                 it[ProductsCustomTable.brand] = json["brand"].orEmpty()
                 it[ProductsCustomTable.ingredients] = emptyList<ProductComponent>()
                 it[ProductsCustomTable.ingredientsText] = ""
-                it[ProductsCustomTable.images] = ProductImages(front = imageUrlsFor(images))
+                it[ProductsCustomTable.images] = images
                 it[ProductsCustomTable.tags] = emptyList()
                 it[ProductsCustomTable.traces] = emptyList()
                 it[ProductsCustomTable.allergens] = emptyList()
@@ -194,7 +184,6 @@ object CustomProductService {
                     json["alcohol"]?.split(";")?.filter { id -> id.isNotBlank() }.orEmpty()
             }
 
-            ProductImagesTable.attachToProduct(images.map { it.id }, barcode)
             ProposalsTable.update({ ProposalsTable.id eq proposalId }) {
                 it[ProposalsTable.status] = RequestStatus.APPROVED
             }
@@ -206,16 +195,12 @@ object CustomProductService {
 
     fun reject(proposalId: String) {
         transaction {
-            val images = ProductImagesTable.findByProposal(proposalId)
-            val updated = ProposalsTable.update({
+            ProposalsTable.update({
                 (ProposalsTable.id eq proposalId) and
                         (ProposalsTable.entityType eq CUSTOM_PRODUCT_ENTITY) and
                         (ProposalsTable.status eq RequestStatus.PENDING)
             }) {
                 it[ProposalsTable.status] = RequestStatus.REJECTED
-            }
-            if (updated > 0) {
-                ProductImagesTable.markStatus(images.map { it.id }, ProductImageStatus.REJECTED)
             }
         }
     }
@@ -224,7 +209,7 @@ object CustomProductService {
         val barcode = validateBarcode(input.barcode)
         val name = input.name.trim().also { require(it.isNotBlank()) { "Produktname ist erforderlich." } }
         val brand = input.brand.trim().also { require(it.isNotBlank()) { "Marke ist erforderlich." } }
-        val frontUpload = input.front?.let { ProductImageService.process(it.bytes, it.mime) }
+        val upload = input.front?.let { ProductImageService.process(it.bytes, it.mime) }
 
         transaction {
             val existingRow = ProductsCustomTable.selectAll().where { ProductsCustomTable.id eq barcode }
@@ -234,30 +219,26 @@ object CustomProductService {
                 "name" to existingRow[ProductsCustomTable.name],
                 "brand" to existingRow[ProductsCustomTable.brand],
             )
-            val existingImages = ProductImagesTable.findByProduct(barcode)
 
-            var front = existingImages
+            val newImages: ProductImages? = when {
+                input.removeFront -> {
+                    ProductImagesTable.delete(barcode)
+                    ProductImages()
+                }
 
-            if (input.removeFront || frontUpload != null) {
-                ProductImagesTable.markStatus(front.map { it.id }, ProductImageStatus.REPLACED)
-                front = emptyList()
+                upload != null -> {
+                    val thumbnail = ProductImageService.thumbnail(upload.jpeg)
+                    ProductImagesTable.put(barcode, thumbnail, upload.jpeg)
+                    productImagesJson(barcode, thumbnail, upload.jpeg)
+                }
+
+                else -> null
             }
-
-            val frontUrls = imageUrlsFor(front) +
-                    (frontUpload?.let {
-                        insertImage(
-                            proposalId = null,
-                            productId = barcode,
-                            status = ProductImageStatus.ATTACHED,
-                            upload = it,
-                            createdBy = input.editor,
-                        )
-                    } ?: emptyMap())
 
             ProductsCustomTable.update({ ProductsCustomTable.id eq barcode }) {
                 it[ProductsCustomTable.name] = name
                 it[ProductsCustomTable.brand] = brand
-                it[ProductsCustomTable.images] = ProductImages(frontUrls)
+                newImages?.let { images -> it[ProductsCustomTable.images] = images }
             }
 
             ProposalsTable.recordDirectChange(
@@ -271,8 +252,6 @@ object CustomProductService {
         reprocess(barcode)
         return barcode
     }
-
-    fun cleanupOldImages(): Int = ProductImagesTable.cleanupOldRejected()
 
     fun classificationOptions(animal: Boolean): List<Pair<String, String>> =
         ClassificationsTable.all()
@@ -288,50 +267,14 @@ object CustomProductService {
             ClassificationsTable.findById(id)?.let { if (animal) it.animal else it.alcohol } == true
         }
 
-    private fun imageUrlsFor(images: List<ProductImage>): Map<Int, String> =
-        images
-            .flatMap { image ->
-                ProductImageFilesTable.metadataByImage(image.id).map { (fileId, width) ->
-                    width to "/image/$fileId"
-                }
-            }
-            .toMap()
-
-    private fun insertImage(
-        proposalId: String?,
-        productId: String?,
-        status: ProductImageStatus,
-        upload: ProcessedImageUpload,
-        createdBy: String,
-    ): Map<Int, String> {
-        val imageId = UUID.randomUUID().toString()
-        ProductImagesTable.insert {
-            it[ProductImagesTable.id] = imageId
-            it[ProductImagesTable.proposalId] = proposalId
-            it[ProductImagesTable.productId] = productId
-            it[ProductImagesTable.status] = status
-            it[ProductImagesTable.originalMime] = upload.originalMime
-            it[ProductImagesTable.originalWidth] = upload.originalWidth
-            it[ProductImagesTable.originalHeight] = upload.originalHeight
-            it[ProductImagesTable.originalBytes] = upload.originalBytes
-            it[ProductImagesTable.sha256] = upload.sha256
-            it[ProductImagesTable.createdAt] = Instant.now()
-            it[ProductImagesTable.createdBy] = createdBy
-        }
-
-        return upload.variants.associate { variant ->
-            val fileId = UUID.randomUUID().toString()
-            ProductImageFilesTable.insert {
-                it[ProductImageFilesTable.id] = fileId
-                it[ProductImageFilesTable.imageId] = imageId
-                it[ProductImageFilesTable.width] = variant.width
-                it[ProductImageFilesTable.mime] = variant.mime
-                it[ProductImageFilesTable.byteSize] = variant.bytes.size
-                it[ProductImageFilesTable.sha256] = variant.sha256
-                it[ProductImageFilesTable.data] = variant.bytes
-            }
-            variant.width to "/image/$fileId"
-        }
+    private fun productImagesJson(productId: String, thumbnail: ByteArray, full: ByteArray): ProductImages {
+        val version = ProductImageService.sha256(thumbnail + full).take(16)
+        return ProductImages(
+            front = mapOf(
+                0 to "/image/$productId/thumb?v=$version",
+                300 to "/image/$productId?v=$version",
+            )
+        )
     }
 
     private fun reprocess(barcode: String) {
