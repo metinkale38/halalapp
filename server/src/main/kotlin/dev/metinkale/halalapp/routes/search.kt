@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.routes
 import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.service.SearchQuery
+import dev.metinkale.halalapp.server.isAdmin
 import dev.metinkale.halalapp.service.SearchService
 import dev.metinkale.halalapp.ui.search.searchPage
 import io.ktor.server.html.respondHtml
@@ -32,7 +33,7 @@ fun Routing.searchRoutes() {
                 status = status ?: setOf(Status.HALAL, Status.DOUBTFUL, Status.UNKNOWN, Status.HARAM)
             )
         )
-        call.respondHtml { searchPage(search) }
+        call.respondHtml { searchPage(search, call.isAdmin()) }
 
     }
 

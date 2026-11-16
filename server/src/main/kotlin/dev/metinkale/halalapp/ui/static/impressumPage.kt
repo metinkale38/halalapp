@@ -4,9 +4,9 @@ import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.component.card
 import kotlinx.html.*
 
-fun HTML.impressumPage() = template("Impressum", {
+fun HTML.impressumPage(isAdmin: Boolean = false) = template("Impressum", head = {
     meta(name = "robots", content = "noindex, nofollow")
-},titleBlock = {
+}, isAdmin = isAdmin, titleBlock = {
     h1 { +"Impressum" }
 }) {
     card {

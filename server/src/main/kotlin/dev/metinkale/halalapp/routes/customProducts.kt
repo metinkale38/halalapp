@@ -6,6 +6,7 @@ import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.ProductImageFilesTable
 import dev.metinkale.halalapp.db.table.ProductImagesTable
 import dev.metinkale.halalapp.db.table.ProductsCustomTable
+import dev.metinkale.halalapp.db.table.ProposalsTable
 import dev.metinkale.halalapp.server.HalalAppUser
 import dev.metinkale.halalapp.server.authenticated
 import dev.metinkale.halalapp.server.ensureAdmin
@@ -19,6 +20,7 @@ import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.customproducts.CustomProductFormData
 import dev.metinkale.halalapp.ui.customproducts.customProductAdminPage
 import dev.metinkale.halalapp.ui.customproducts.customProductFormPage
+import dev.metinkale.halalapp.ui.customproducts.customProductHistoryPage
 import dev.metinkale.halalapp.ui.customproducts.customProductListPage
 import io.ktor.http.*
 import io.ktor.http.content.PartData
@@ -133,6 +135,15 @@ fun Routing.customProductRoutes() {
                 ensureAdmin()
                 call.respondHtml {
                     customProductListPage(ProductsCustomTable.allProducts())
+                }
+            }
+
+            get("/history") {
+                ensureAdmin()
+                call.respondHtml {
+                    customProductHistoryPage(
+                        ProposalsTable.findHistory(dev.metinkale.halalapp.service.CUSTOM_PRODUCT_ENTITY)
+                    )
                 }
             }
 

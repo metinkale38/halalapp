@@ -15,7 +15,7 @@ import kotlinx.html.*
 fun <T : Entity> HTML.createRequestPage(table: CrmTable<T>, map: Map<String, String>, readOnlyFields: Set<String>) {
 
 
-    template("Vorschlag erstellen - ${table.germanName}", head = { loadEasyMDE() }, {
+    template("Vorschlag erstellen - ${table.germanName}", head = { loadEasyMDE() }, titleBlock = {
         h2 { +"Vorschlag erstellen" }
         h4 { +table.germanName }
     }) {

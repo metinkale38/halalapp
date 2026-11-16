@@ -16,9 +16,15 @@ fun HTML.customProductListPage(products: List<CustomProduct>) = template(
         p(classes = "text-sm text-gray-600") {
             +"Bearbeite Name, Marke oder Frontfoto bestehender Custom-Produkte."
         }
-        a(classes = "btn-secondary") {
-            href = "/crm/products_custom"
-            +"Zu den Vorschlägen"
+        div(classes = "flex flex-wrap gap-2") {
+            a(classes = "btn-secondary") {
+                href = "/crm/products_custom"
+                +"Zu den Vorschlägen"
+            }
+            a(classes = "btn-secondary") {
+                href = "/crm/products_custom/history"
+                +"Verlauf"
+            }
         }
     }
 
@@ -30,9 +36,15 @@ fun HTML.customProductListPage(products: List<CustomProduct>) = template(
         div(classes = "grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3") {
             products.forEach { product ->
                 card("flex flex-row gap-3 items-center !p-3") {
-                    img(classes = "h-16 w-16 rounded-lg object-cover bg-gray-100 flex-shrink-0") {
-                        src = product.images.getFrontPhoto(100)
-                        alt = product.name
+                    val photo = product.images.getFrontPhoto(100)
+                        .let { if (it == "/nophoto.webp") "/nophoto.100.webp" else it }
+                    div(classes = "h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100") {
+                        img(classes = "h-16 w-16 object-cover") {
+                            src = photo
+                            alt = product.name
+                            loading = ImgLoading.lazy
+                            style = "width:64px;height:64px;object-fit:cover;"
+                        }
                     }
                     div(classes = "min-w-0 grow") {
                         p(classes = "text-xs font-semibold uppercase tracking-wide text-indigo-600 truncate") {

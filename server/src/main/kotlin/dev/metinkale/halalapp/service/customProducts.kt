@@ -235,8 +235,13 @@ object CustomProductService {
         val frontUpload = input.front?.let { ProductImageService.process(it.bytes, it.mime) }
 
         transaction {
-            ProductsCustomTable.selectAll().where { ProductsCustomTable.id eq barcode }
+            val existingRow = ProductsCustomTable.selectAll().where { ProductsCustomTable.id eq barcode }
                 .singleOrNull() ?: throw IllegalArgumentException("Custom-Produkt nicht gefunden.")
+            val oldValues = mapOf(
+                "id" to barcode,
+                "name" to existingRow[ProductsCustomTable.name],
+                "brand" to existingRow[ProductsCustomTable.brand],
+            )
             val existingImages = ProductImagesTable.findByProduct(barcode)
 
             var front = existingImages.filter { it.kind == ProductImageKind.FRONT }
@@ -267,6 +272,14 @@ object CustomProductService {
                 it[ProductsCustomTable.brand] = brand
                 it[ProductsCustomTable.images] = ProductImages(frontUrls, emptyMap())
             }
+
+            ProposalsTable.recordDirectChange(
+                entityType = CUSTOM_PRODUCT_ENTITY,
+                oldValues = oldValues,
+                newValues = mapOf("id" to barcode, "name" to name, "brand" to brand),
+                creator = input.editor,
+                note = "Direkte Admin-Änderung",
+            )
         }
         reprocess(barcode)
         return barcode

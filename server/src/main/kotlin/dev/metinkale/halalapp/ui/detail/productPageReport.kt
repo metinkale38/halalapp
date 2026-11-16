@@ -18,8 +18,9 @@ import kotlinx.datetime.format.char
 import kotlinx.html.*
 
 
-fun HTML.productPageProposal(product: Product) = template(
+fun HTML.productPageProposal(product: Product, isAdmin: Boolean = false) = template(
     product.brand + " " + product.name + " Änderung vorschlagen - HalalApp",
+    isAdmin = isAdmin,
     titleBlock = {
         h1 {
             +"Änderung vorschlagen"

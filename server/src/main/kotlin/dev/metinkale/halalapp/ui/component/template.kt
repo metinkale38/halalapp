@@ -8,6 +8,7 @@ private val year = LocalDate.now().year
 fun HTML.template(
     title: String = "HalalApp",
     head: HEAD.() -> Unit = {},
+    isAdmin: Boolean = false,
     titleBlock: (FlowContent.() -> Unit)? = null,
     body: FlowContent.() -> Unit,
 ) {
@@ -158,6 +159,13 @@ fun HTML.template(
                     a(classes = "hover:text-gray-900 transition-colors underline decoration-dotted") {
                         href = "/impressum"
                         +"""Impressum"""
+                    }
+                    if (isAdmin) {
+                        span { +"|" }
+                        a(classes = "hover:text-gray-900 transition-colors underline decoration-dotted") {
+                            href = "/crm"
+                            +"CRM"
+                        }
                     }
                 }
             }

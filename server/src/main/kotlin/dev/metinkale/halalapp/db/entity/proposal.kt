@@ -7,6 +7,7 @@ data class Proposal(
     override val id: String,
     val entityType: String,
     val json: Map<String, String>,
+    val oldJson: Map<String, String>?,
     val note: String,
     val creator: String,
     val status: RequestStatus,

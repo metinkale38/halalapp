@@ -34,7 +34,7 @@ fun Application.errorPageConfig(){
             val path = call.request.path()
             if (path.startsWith("/product/")) {
                 val barcode = path.removePrefix("/product/").substringBefore("/")
-                call.respondHtml(status) { productNotFoundPage(barcode) }
+                call.respondHtml(status) { productNotFoundPage(barcode, call.isAdmin()) }
             } else {
                 call.respondHtml(status) {
                     notFoundPage()

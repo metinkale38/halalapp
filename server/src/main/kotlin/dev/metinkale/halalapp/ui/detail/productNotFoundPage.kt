@@ -3,7 +3,7 @@ package dev.metinkale.halalapp.ui.detail
 import dev.metinkale.halalapp.ui.component.template
 import kotlinx.html.*
 
-fun HTML.productNotFoundPage(barcode: String? = null) = template("Produkt nicht gefunden - HalalApp") {
+fun HTML.productNotFoundPage(barcode: String? = null, isAdmin: Boolean = false) = template("Produkt nicht gefunden - HalalApp", isAdmin = isAdmin) {
     div(classes = "flex flex-col items-center justify-center py-20 px-4 text-center") {
 
         div(classes = "text-6xl mb-6") { +"🔍" }

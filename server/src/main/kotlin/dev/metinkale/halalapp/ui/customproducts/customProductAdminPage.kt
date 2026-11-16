@@ -22,9 +22,15 @@ fun HTML.customProductAdminPage(
         p(classes = "text-sm text-gray-600") {
             +"Hier landen Produkte, die es nicht bei OpenFoodFacts gibt und die nur zusammen mit einer Produktinformation angelegt werden."
         }
-        a(classes = "btn-secondary whitespace-nowrap") {
-            href = "/crm/products_custom/manage"
-            +"Bestehende Produkte"
+        div(classes = "flex flex-wrap gap-2") {
+            a(classes = "btn-secondary whitespace-nowrap") {
+                href = "/crm/products_custom/manage"
+                +"Bestehende Produkte"
+            }
+            a(classes = "btn-secondary whitespace-nowrap") {
+                href = "/crm/products_custom/history"
+                +"Verlauf"
+            }
         }
     }
 
