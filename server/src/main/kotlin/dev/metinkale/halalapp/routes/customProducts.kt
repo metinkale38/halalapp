@@ -78,8 +78,8 @@ fun Routing.customProductRoutes() {
                         insightContent = form.first("insightContent"),
                         insightDate = runCatching { LocalDate.parse(form.first("insightDate")) }
                             .getOrDefault(LocalDate.now()),
-                        animal = form.all("animal"),
-                        alcohol = form.all("alcohol"),
+                        animal = listOfNotNull(form.first("animal").takeIf { it.isNotBlank() }),
+                        alcohol = listOfNotNull(form.first("alcohol").takeIf { it.isNotBlank() }),
                         note = form.first("note"),
                         creator = call.userIdentity(),
                         front = form.files["front"],
@@ -269,8 +269,8 @@ private fun ParsedProductForm.toFormData() = CustomProductFormData(
     brand = first("brand"),
     insightContent = first("insightContent"),
     insightDate = first("insightDate").ifBlank { LocalDate.now().toString() },
-    animal = all("animal").toSet(),
-    alcohol = all("alcohol").toSet(),
+    animal = first("animal"),
+    alcohol = first("alcohol"),
     note = first("note"),
 )
 

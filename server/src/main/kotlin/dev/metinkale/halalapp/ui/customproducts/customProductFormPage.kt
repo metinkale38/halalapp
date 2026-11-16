@@ -14,8 +14,8 @@ data class CustomProductFormData(
     val brand: String = "",
     val insightContent: String = "",
     val insightDate: String = LocalDate.now().toString(),
-    val animal: Set<String> = emptySet(),
-    val alcohol: Set<String> = emptySet(),
+    val animal: String = "",
+    val alcohol: String = "",
     val note: String = "",
 )
 
@@ -109,21 +109,19 @@ fun HTML.customProductFormPage(
                         }
                     }
 
-                    div(classes = "flex flex-col gap-2") {
-                        span(classes = "text-sm font-medium text-gray-700") { +"Tierische Bestandteile" }
-                        p(classes = "text-xs text-gray-500") {
-                            +"Zutaten, die laut Produktinformation tierisch sind oder sein können. Mehrfachauswahl möglich."
-                        }
-                        checkBoxList("animal", animalOptions, data.animal)
-                    }
+                    selectField(
+                        "Tierische Bestandteile",
+                        "animal",
+                        listOf("" to "Keine Angabe") + animalOptions,
+                        data.animal,
+                    )
 
-                    div(classes = "flex flex-col gap-2") {
-                        span(classes = "text-sm font-medium text-gray-700") { +"Berauschende Bestandteile" }
-                        p(classes = "text-xs text-gray-500") {
-                            +"Zutaten, die laut Produktinformation Alkohol enthalten oder enthalten können."
-                        }
-                        checkBoxList("alcohol", alcoholOptions, data.alcohol)
-                    }
+                    selectField(
+                        "Berauschende Bestandteile",
+                        "alcohol",
+                        listOf("" to "Keine Angabe") + alcoholOptions,
+                        data.alcohol,
+                    )
                 }
 
                 photoField(
@@ -199,29 +197,6 @@ fun HTML.customProductFormPage(
                     }
                 }
             """.trimIndent()
-        }
-    }
-}
-
-private fun FlowContent.checkBoxList(
-    name: String,
-    options: List<Pair<String, String>>,
-    selected: Set<String>,
-) {
-    if (options.isEmpty()) {
-        p(classes = "text-sm text-gray-500") { +"Keine Optionen verfügbar." }
-        return
-    }
-    div(classes = "grid grid-cols-1 gap-2 md:grid-cols-2") {
-        options.forEach { (id, labelText) ->
-            label(classes = "flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-2 text-sm") {
-                input(type = InputType.checkBox, classes = "mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500") {
-                    this.name = name
-                    value = id
-                    checked = id in selected
-                }
-                span { +labelText }
-            }
         }
     }
 }
