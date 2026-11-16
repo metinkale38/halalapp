@@ -14,10 +14,13 @@ fun Route.cachingPolicy() {
         options { call, _ ->
             val path = call.request.path()
 
-            if (path.startsWith("/crm")) {
-                CachingOptions(CacheControl.NoStore(Visibility.Private))
-            } else {
-                CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 43200, visibility = Visibility.Public))
+            when {
+                path.startsWith("/crm") -> CachingOptions(CacheControl.NoStore(Visibility.Private))
+                path.startsWith("/image") -> CachingOptions(
+                    CacheControl.MaxAge(maxAgeSeconds = 31_536_000, visibility = Visibility.Public)
+                )
+
+                else -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 43200, visibility = Visibility.Public))
             }
         }
     }

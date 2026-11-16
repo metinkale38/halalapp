@@ -32,4 +32,19 @@ fun HTML.proposalOverviewPage() = template(
             }
         }
     }
+
+    a {
+        href = "/crm/products_custom"
+        card {
+            div("flex flex-row items-center") {
+                h2(classes = "text-2xl font-extrabold tracking-tight grow mb-4") {
+                    +"Custom-Produkte"
+                }
+                statusBadgeComponent(
+                    "${ProposalsTable.numberOfOpenRequests(dev.metinkale.halalapp.service.CUSTOM_PRODUCT_ENTITY)} Vorschläge",
+                    Status.HALAL
+                )
+            }
+        }
+    }
 }

@@ -22,7 +22,7 @@ fun Routing.detailRoutes() {
             } ?: run {
                 val entity = ProcessedProductsTable.findById(id)
                 if (entity != null) call.respondHtml { productPage(entity) }
-                else call.respondHtml(status = HttpStatusCode.NotFound) { productNotFoundPage() }
+                else call.respondHtml(status = HttpStatusCode.NotFound) { productNotFoundPage(id) }
             }
         }
         get("/{id}/proposal") {
@@ -31,7 +31,7 @@ fun Routing.detailRoutes() {
 
             val entity = ProcessedProductsTable.findById(id)
             if (entity != null) call.respondHtml { productPageProposal(entity) }
-            else call.respondHtml(status = HttpStatusCode.NotFound) { productNotFoundPage() }
+            else call.respondHtml(status = HttpStatusCode.NotFound) { productNotFoundPage(id) }
         }
     }
 }

@@ -7,6 +7,7 @@ import dev.metinkale.halalapp.domain.RequestStatus
 import io.ktor.http.Parameters
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.javatime.timestamp
@@ -76,15 +77,20 @@ object ProposalsTable : EntityTable<Proposal>("proposals") {
             }
         }
 
-    fun <T : Entity> findOpenRequests(crmTable: CrmTable<T>) = transaction {
+    fun <T : Entity> findOpenRequests(crmTable: CrmTable<T>) = findOpenRequests(crmTable.tableName)
+
+    fun findOpenRequests(entityType: String) = transaction {
         ProposalsTable.selectAll()
-            .where { (entityType eq crmTable.tableName).and(status eq RequestStatus.PENDING) }
+            .where { (ProposalsTable.entityType eq entityType).and(status eq RequestStatus.PENDING) }
+            .orderBy(date to SortOrder.DESC)
             .map { map(it) }
     }
 
-    fun <T : Entity> numberOfOpenRequests(crmTable: CrmTable<T>) = transaction {
+    fun <T : Entity> numberOfOpenRequests(crmTable: CrmTable<T>) = numberOfOpenRequests(crmTable.tableName)
+
+    fun numberOfOpenRequests(entityType: String) = transaction {
         ProposalsTable.selectAll()
-            .where { (entityType eq crmTable.tableName).and(status eq RequestStatus.PENDING) }
+            .where { (ProposalsTable.entityType eq entityType).and(status eq RequestStatus.PENDING) }
             .count()
     }
 
