@@ -84,40 +84,61 @@ fun <T : Entity> HTML.crmEntityListPage(
         card("mx-auto w-full max-w-full overflow-hidden !p-0") {
             div(classes = "w-full overflow-x-auto") {
                 table(classes = "w-full min-w-[44rem] divide-y divide-gray-200 text-sm") {
-                thead(classes = "bg-gray-50") {
-                    tr {
-                        table.listFieldNames.forEach { name ->
-                            th(classes = "whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500") {
-                                +table.fieldLabel(name)
-                            }
-                        }
-                        th(classes = "px-4 py-3") { }
-                    }
-                }
-                tbody(classes = "divide-y divide-gray-100 bg-white") {
-                    entries.forEach { entry ->
+                    thead(classes = "bg-gray-50") {
                         tr {
                             table.listFieldNames.forEach { name ->
-                                td(classes = "max-w-[24rem] truncate px-4 py-3 text-gray-700") {
-                                    if (table === ProductParentTable && (name == "child_name" || name == "parent_name")) {
-                                        val id = entry.values[if (name == "child_name") "child_id" else "parent_id"].orEmpty()
-                                        a(classes = "font-semibold text-indigo-600 hover:underline") {
-                                            href = "/product/$id"
-                                            +displayValue(entry.values[name])
+                                th(classes = "whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500") {
+                                    +table.fieldLabel(name)
+                                }
+                            }
+                            if (table !== ProductParentTable) {
+                                th(classes = "px-4 py-3") { }
+                            }
+                        }
+                    }
+                    tbody(classes = "divide-y divide-gray-100 bg-white") {
+                        entries.forEach { entry ->
+                            tr {
+                                table.listFieldNames.forEach { name ->
+                                    td(classes = "max-w-[24rem] px-4 py-3 text-gray-700") {
+                                        when {
+                                            table === ProductParentTable && name == "parent_name" -> {
+                                                a(classes = "font-semibold text-indigo-600 hover:underline") {
+                                                    href = "/product/${entry.values["parent_id"].orEmpty()}"
+                                                    +displayValue(entry.values[name])
+                                                }
+                                            }
+
+                                            table === ProductParentTable && name == "child_ids" -> {
+                                                val childIds = entry.values[name].orEmpty()
+                                                    .split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                                if (childIds.isEmpty()) {
+                                                    +"–"
+                                                } else {
+                                                    div(classes = "flex flex-wrap gap-1") {
+                                                        childIds.forEach { childId ->
+                                                            span(classes = "inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700") {
+                                                                +childId
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            else -> +displayValue(entry.values[name])
                                         }
-                                    } else {
-                                        +displayValue(entry.values[name])
+                                    }
+                                }
+                                if (table !== ProductParentTable) {
+                                    td(classes = "whitespace-nowrap px-4 py-3 text-right") {
+                                        a(classes = "font-semibold text-indigo-600 hover:underline") {
+                                            href = "/crm/${table.tableName}/${entry.id}/edit"
+                                            +"Bearbeiten"
+                                        }
                                     }
                                 }
                             }
-                            td(classes = "whitespace-nowrap px-4 py-3 text-right") {
-                                a(classes = "font-semibold text-indigo-600 hover:underline") {
-                                    href = "/crm/${table.tableName}/${entry.id}/edit"
-                                    +"Bearbeiten"
-                                }
-                            }
                         }
-                    }
                     }
                 }
             }

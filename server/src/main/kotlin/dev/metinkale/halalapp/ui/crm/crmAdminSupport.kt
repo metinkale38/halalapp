@@ -18,6 +18,7 @@ fun <T : Entity> CrmTable<T>.readValues(row: ResultRow): Map<String, String> =
 
 fun <T : Entity> CrmTable<T>.displayValues(values: Map<String, String>): Map<String, String> {
     if (this !== ProductParentTable) return values
+    if (values.containsKey("child_ids")) return values
     return values + mapOf(
         "child_name" to productName(values["child_id"].orEmpty()),
         "parent_name" to productName(values["parent_id"].orEmpty()),
@@ -27,8 +28,9 @@ fun <T : Entity> CrmTable<T>.displayValues(values: Map<String, String>): Map<Str
 fun <T : Entity> CrmTable<T>.fieldLabel(name: String): String = when (name) {
     "child_id" -> "Dublette (Barcode)"
     "child_name" -> "Dublette"
-    "parent_id" -> "Hauptprodukt (Barcode)"
-    "parent_name" -> "Hauptprodukt"
+    "child_ids" -> "Verlinkte EANs"
+    "parent_id" -> "EAN (Hauptprodukt)"
+    "parent_name" -> "Name (Hauptprodukt)"
     else -> getCrmFields().firstOrNull { it.name == name }?.label ?: name
 }
 
@@ -45,7 +47,7 @@ val <T : Entity> CrmTable<T>.listFieldNames: List<String>
         ClassificationsTable -> listOf("id", "name", "status", "animal", "alcohol")
         IngredientsTable -> listOf("id", "name", "classification")
         ProductInsightsTable -> listOf("product_id", "date", "animal", "alcohol")
-        ProductParentTable -> listOf("child_id", "child_name", "parent_id", "parent_name")
+        ProductParentTable -> listOf("parent_id", "parent_name", "child_ids")
     }
 
 val <T : Entity> CrmTable<T>.searchFieldNames: List<String>
@@ -53,7 +55,7 @@ val <T : Entity> CrmTable<T>.searchFieldNames: List<String>
         ClassificationsTable -> listOf("id", "name", "status", "animal", "alcohol")
         IngredientsTable -> listOf("id", "name", "classification")
         ProductInsightsTable -> listOf("id", "product_id", "content", "date", "animal", "alcohol")
-        ProductParentTable -> listOf("child_id", "child_name", "parent_id", "parent_name")
+        ProductParentTable -> listOf("parent_id", "parent_name", "child_ids")
     }
 
 fun <T : Entity> CrmTable<T>.entryTitle(values: Map<String, String>): String = when (this) {

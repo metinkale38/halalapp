@@ -14,6 +14,8 @@ import dev.metinkale.halalapp.ui.crm.CrmLens
 import dev.metinkale.halalapp.ui.crm.getCrmFields
 import dev.metinkale.halalapp.ui.crm.readValues
 import org.jetbrains.exposed.v1.core.CustomFunction
+import org.jetbrains.exposed.v1.core.IColumnType
+import org.jetbrains.exposed.v1.core.IntegerColumnType
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -21,6 +23,8 @@ import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.statements.StatementType
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -45,6 +49,9 @@ object CrmAdminService {
         pageSize: Int,
     ): CrmPageData = transaction {
         ClassificationsTable.cacheAll()
+        if (table === ProductParentTable) {
+            return@transaction parentPage(query, requestedPage, pageSize)
+        }
 
         val search = searchOp(table, query)
         var queryBuilder = table.selectAll()
@@ -60,6 +67,74 @@ object CrmAdminService {
             .map { row -> row[table.id].value to table.readValues(row) }
 
         CrmPageData(entries, totalCount, page, totalPages)
+    }
+
+    private fun JdbcTransaction.parentPage(query: String, requestedPage: Int, pageSize: Int): CrmPageData {
+        val trimmed = query.trim()
+        val needle = "%${trimmed.lowercase()}%"
+        val filter = if (trimmed.isNotBlank()) {
+            """
+            WHERE lower(pp.parent_id) LIKE ?
+               OR lower(coalesce(p.name, '')) LIKE ?
+               OR EXISTS (
+                    SELECT 1
+                    FROM product_parent child
+                    WHERE child.parent_id = pp.parent_id
+                      AND lower(child.child_id) LIKE ?
+               )
+            """.trimIndent()
+        } else ""
+        val from = """
+            FROM product_parent pp
+            LEFT JOIN products p ON p.id = pp.parent_id
+            $filter
+            GROUP BY pp.parent_id, p.name
+        """.trimIndent()
+        val filterArgs = if (trimmed.isNotBlank()) {
+            listOf<Pair<IColumnType<*>, Any>>(
+                TextColumnType() to needle,
+                TextColumnType() to needle,
+                TextColumnType() to needle,
+            )
+        } else emptyList()
+
+        val totalCount = exec(
+            "SELECT count(*) FROM (SELECT pp.parent_id $from) grouped",
+            filterArgs,
+            StatementType.SELECT,
+        ) { rs -> if (rs.next()) rs.getInt(1) else 0 } ?: 0
+        val totalPages = if (totalCount == 0) 1 else ceil(totalCount.toDouble() / pageSize).toInt()
+        val page = requestedPage.coerceIn(1, totalPages)
+        val offset = (page - 1) * pageSize
+
+        val entries = exec(
+            """
+            SELECT pp.parent_id,
+                   p.name AS parent_name,
+                   string_agg(pp.child_id, ', ' ORDER BY pp.child_id) AS child_ids
+            $from
+            ORDER BY pp.parent_id
+            LIMIT ? OFFSET ?
+            """.trimIndent(),
+            filterArgs + listOf<Pair<IColumnType<*>, Any>>(
+                IntegerColumnType() to pageSize,
+                IntegerColumnType() to offset,
+            ),
+            StatementType.SELECT,
+        ) { rs ->
+            buildList {
+                while (rs.next()) {
+                    val parentId = rs.getString("parent_id")
+                    add(parentId to mapOf(
+                        "parent_id" to parentId,
+                        "parent_name" to (rs.getString("parent_name") ?: "Unbekannt"),
+                        "child_ids" to (rs.getString("child_ids") ?: ""),
+                    ))
+                }
+            }
+        } ?: emptyList()
+
+        return CrmPageData(entries, totalCount, page, totalPages)
     }
 
     fun <T : Entity> findValues(table: CrmTable<T>, id: String): Map<String, String>? = transaction {
