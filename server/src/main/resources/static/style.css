@@ -78,3 +78,26 @@
     @apply object-contain;
     @apply object-center;
 }
+
+.scanner-frame {
+    border: 2px solid rgb(255 255 255 / 0.85);
+    box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.35), 0 0 12px rgb(255 255 255 / 0.35);
+}
+
+#scanner {
+    overflow: hidden;
+}
+
+#scanner video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+
+#scanner canvas {
+    display: none;
+}
+
+#torch-button[aria-pressed="true"] {
+    background-color: var(--color-primary);
+}
