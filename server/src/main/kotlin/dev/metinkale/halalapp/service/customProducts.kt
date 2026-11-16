@@ -40,7 +40,6 @@ data class CustomProductSubmission(
     val barcode: String,
     val name: String,
     val brand: String,
-    val category: String?,
     val insightContent: String,
     val insightDate: LocalDate,
     val animal: List<String>,
@@ -55,7 +54,6 @@ data class CustomProductEdit(
     val barcode: String,
     val name: String,
     val brand: String,
-    val category: String?,
     val front: UploadedImageInput?,
     val ingredients: UploadedImageInput?,
     val removeFront: Boolean,
@@ -80,7 +78,6 @@ object CustomProductService {
         val name = input.name.trim().also { require(it.isNotBlank()) { "Produktname ist erforderlich." } }
         val brand = input.brand.trim().also { require(it.isNotBlank()) { "Marke ist erforderlich." } }
         val content = input.insightContent.trim().also { require(it.isNotBlank()) { "Produktinformation ist erforderlich." } }
-        val category = input.category?.trim()?.takeIf { it.isNotBlank() }
         val animal = sanitizeClassifications(input.animal, animal = true)
         val alcohol = sanitizeClassifications(input.alcohol, animal = false)
 
@@ -103,7 +100,6 @@ object CustomProductService {
                 "id" to barcode,
                 "name" to name,
                 "brand" to brand,
-                "category" to (category ?: ""),
                 "insightContent" to content,
                 "insightDate" to input.insightDate.toString(),
                 "animal" to animal.joinToString(";"),
@@ -159,7 +155,6 @@ object CustomProductService {
                 barcode = json["id"].orEmpty(),
                 name = json["name"].orEmpty(),
                 brand = json["brand"].orEmpty(),
-                category = json["category"]?.takeIf { it.isNotBlank() },
                 insightContent = json["insightContent"].orEmpty(),
                 insightDate = runCatching { LocalDate.parse(json["insightDate"]) }.getOrDefault(LocalDate.now()),
                 animal = json["animal"]?.split(";")?.filter { it.isNotBlank() }.orEmpty(),
@@ -211,7 +206,6 @@ object CustomProductService {
                 it[ProductsCustomTable.tags] = emptyList()
                 it[ProductsCustomTable.traces] = emptyList()
                 it[ProductsCustomTable.allergens] = emptyList()
-                it[ProductsCustomTable.category] = json["category"]?.takeIf { value -> value.isNotBlank() }
             }
 
             ProductInsightsTable.insert {
@@ -256,7 +250,6 @@ object CustomProductService {
         val barcode = validateBarcode(input.barcode)
         val name = input.name.trim().also { require(it.isNotBlank()) { "Produktname ist erforderlich." } }
         val brand = input.brand.trim().also { require(it.isNotBlank()) { "Marke ist erforderlich." } }
-        val category = input.category?.trim()?.takeIf { it.isNotBlank() }
         val frontUpload = input.front?.let { ProductImageService.process(it.bytes, it.mime) }
         val ingredientsUpload = input.ingredients?.let { ProductImageService.process(it.bytes, it.mime) }
 
@@ -304,7 +297,6 @@ object CustomProductService {
             ProductsCustomTable.update({ ProductsCustomTable.id eq barcode }) {
                 it[ProductsCustomTable.name] = name
                 it[ProductsCustomTable.brand] = brand
-                it[ProductsCustomTable.category] = category
                 it[ProductsCustomTable.images] = ProductImages(frontUrls, ingredientUrls)
             }
         }

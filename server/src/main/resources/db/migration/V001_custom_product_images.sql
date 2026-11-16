@@ -32,39 +32,3 @@ CREATE TABLE IF NOT EXISTS product_image_files (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_product_image_files_image_width
     ON product_image_files (image_id, width);
 CREATE INDEX IF NOT EXISTS idx_product_image_files_image ON product_image_files (image_id);
-
--- Category is already present in products_custom but was missing from the merged view.
--- The new column is appended so CREATE OR REPLACE can keep existing consumers working.
-CREATE OR REPLACE VIEW products AS
-SELECT id,
-       name,
-       brand,
-       ingredients,
-       ingredients_text,
-       images,
-       tags,
-       traces,
-       allergens,
-       category
-FROM (
-    SELECT COALESCE(c.id, o.id)                     AS id,
-           COALESCE(c.name, o.name)                 AS name,
-           COALESCE(c.brand, o.brand)               AS brand,
-           COALESCE(c.ingredients, o.ingredients)   AS ingredients,
-           COALESCE(c.ingredients_text, o.ingredients_text) AS ingredients_text,
-           COALESCE(c.images, o.images)             AS images,
-           COALESCE(c.tags, o.tags)                 AS tags,
-           COALESCE(c.traces, o.traces)             AS traces,
-           COALESCE(c.allergens, o.allergens)       AS allergens,
-           c.category                               AS category
-    FROM products_off o
-    FULL JOIN products_custom c ON o.id = c.id
-) combined_view;
-
--- Backfill the category for already processed custom products.
-UPDATE products_processed pp
-SET category = c.category
-FROM products_custom c
-WHERE pp.id = c.id
-  AND pp.category IS NULL
-  AND c.category IS NOT NULL;

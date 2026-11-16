@@ -3,7 +3,7 @@ package dev.metinkale.halalapp.worker.productprocessor
 import dev.metinkale.halalapp.db.DatabaseFactory
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.IngredientsTable
-import dev.metinkale.halalapp.db.table.MergedProductsTable
+import dev.metinkale.halalapp.db.table.ProductsTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -38,8 +38,8 @@ object ProductProcessorWorker {
         transaction {
             ClassificationsTable.cacheAll()
             IngredientsTable.cacheAll()
-            val product = MergedProductsTable.selectAll()
-                .where { MergedProductsTable.id eq id }
+            val product = ProductsTable.selectAll()
+                .where { ProductsTable.id eq id }
                 .singleOrNull()
                 ?.let { mapToProduct(it) }
                 ?: return@transaction

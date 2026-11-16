@@ -26,13 +26,11 @@ object ProductsCustomTable : IdTable<String>("products_custom") {
     val tags = array("tags", TextColumnType())
     val traces = array("traces", TextColumnType())
     val allergens = array("allergens", TextColumnType())
-    val category = text("category").nullable()
 
     fun map(row: ResultRow) = CustomProduct(
         id = row[id].value,
         name = row[name],
         brand = row[brand],
-        category = row[category],
         images = row[images],
     )
 

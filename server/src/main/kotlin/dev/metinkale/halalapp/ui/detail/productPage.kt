@@ -54,12 +54,6 @@ fun HTML.productPage(product: Product) = template(
 //                    }
 //                }
         }
-        product.category?.takeIf { it.isNotBlank() }?.let { category ->
-            div(classes = "text-sm font-medium text-gray-500") {
-                +"Kategorie: "
-                span(classes = "text-gray-700") { +category }
-            }
-        }
         div(classes = "space-y-6") {
 
 

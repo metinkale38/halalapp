@@ -27,7 +27,6 @@ fun ProductProcessorWorker.persist(products: List<Product>) {
         this[ProcessedProductsTable.status] = it.status.map { it.name }
         this[ProcessedProductsTable.confidence] = it.confidence
         this[ProcessedProductsTable.lastUpdated] = now
-        this[ProcessedProductsTable.category] = it.category
 
     }
 

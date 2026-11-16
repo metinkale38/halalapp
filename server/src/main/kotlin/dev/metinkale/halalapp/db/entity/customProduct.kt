@@ -51,7 +51,6 @@ data class CustomProduct(
     override val id: String,
     val name: String,
     val brand: String,
-    val category: String?,
     val images: ProductImages,
 ) : Entity
 
@@ -65,7 +64,6 @@ data class CustomProductProposal(
     val barcode: String,
     val name: String,
     val brand: String,
-    val category: String?,
     val insightContent: String,
     val insightDate: java.time.LocalDate,
     val animal: List<String>,

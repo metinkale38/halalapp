@@ -3,7 +3,7 @@ package dev.metinkale.halalapp.worker.productprocessor
 import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
-import dev.metinkale.halalapp.db.table.MergedProductsTable
+import dev.metinkale.halalapp.db.table.ProductsTable
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -26,12 +26,12 @@ fun ProductProcessorWorker.load(): List<Product> {
 
 
 private fun ProductProcessorWorker.loadMissingProducts(limit: Int = 1000): List<Product> {
-    return (MergedProductsTable.leftJoin(ProcessedProductsTable) { MergedProductsTable.id eq ProcessedProductsTable.id })
+    return (ProductsTable.leftJoin(ProcessedProductsTable) { ProductsTable.id eq ProcessedProductsTable.id })
         .selectAll()
         .where {
             ProcessedProductsTable.id.isNull() and not(
                 exists(
-                    ProductParentTable.selectAll().where { ProductParentTable.childId eq MergedProductsTable.id })
+                    ProductParentTable.selectAll().where { ProductParentTable.childId eq ProductsTable.id })
             )
         }
         .limit(limit)
@@ -41,9 +41,9 @@ private fun ProductProcessorWorker.loadMissingProducts(limit: Int = 1000): List<
 private fun ProductProcessorWorker.loadOldestProcessedProducts(limit: Int = 1000): List<Product> {
     val startOfToday = LocalDate.now().atTime(0, 0, 0, 0).toInstant(ZoneOffset.UTC);
 
-    return MergedProductsTable
-        .innerJoin(ProcessedProductsTable, { MergedProductsTable.id }, { ProcessedProductsTable.id })
-        .select(MergedProductsTable.columns)
+    return ProductsTable
+        .innerJoin(ProcessedProductsTable, { ProductsTable.id }, { ProcessedProductsTable.id })
+        .select(ProductsTable.columns)
         .where { ProcessedProductsTable.lastUpdated less startOfToday }
         .orderBy(ProcessedProductsTable.lastUpdated to SortOrder.ASC)
         .limit(limit)

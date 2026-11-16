@@ -28,9 +28,6 @@ fun FlowContent.productCard(product: Product) {
                     }
                 }
                 div(classes = "text-base font-medium text-gray-900 leading-snug truncate") { +(product.name) }
-                product.category?.takeIf { it.isNotBlank() }?.let { category ->
-                    div(classes = "text-xs text-gray-500 truncate") { +category }
-                }
             }
         }
     }

@@ -49,10 +49,6 @@ fun HTML.customProductAdminPage(
                         +proposal.brand
                         +" · "
                         +proposal.barcode
-                        if (proposal.category != null) {
-                            +" · "
-                            +proposal.category
-                        }
                     }
                 }
                 statusBadgeComponent("Offen", Status.DOUBTFUL)
@@ -147,13 +143,7 @@ fun HTML.customProductAdminPage(
                             +product.brand
                         }
                         p(classes = "text-sm font-semibold text-gray-900 truncate") { +product.name }
-                        p(classes = "text-xs text-gray-500 truncate") {
-                            +product.id
-                            if (product.category != null) {
-                                +" · "
-                                +product.category
-                            }
-                        }
+                        p(classes = "text-xs text-gray-500 truncate") { +product.id }
                     }
                     div(classes = "flex flex-col gap-1") {
                         a(classes = "text-sm font-semibold text-indigo-600 hover:underline") {

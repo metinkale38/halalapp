@@ -12,7 +12,6 @@ data class CustomProductFormData(
     val barcode: String = "",
     val name: String = "",
     val brand: String = "",
-    val category: String = "",
     val insightContent: String = "",
     val insightDate: String = LocalDate.now().toString(),
     val animal: Set<String> = emptySet(),
@@ -78,14 +77,6 @@ fun HTML.customProductFormPage(
                         name = "brand"
                         value = data.brand
                         required = true
-                    }
-                }
-
-                label {
-                    span(classes = "text-sm font-medium text-gray-700 mb-1") { +"Kategorie (optional)" }
-                    input(classes = "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500") {
-                        name = "category"
-                        value = data.category
                     }
                 }
 

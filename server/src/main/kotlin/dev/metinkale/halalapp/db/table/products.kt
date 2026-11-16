@@ -23,7 +23,3 @@ open class ProductsTable(table: String = "products") : IdTable<String>(table) {
     companion object : ProductsTable()
 }
 
-object MergedProductsTable : ProductsTable("products") {
-    val category = text("category").nullable()
-}
-
