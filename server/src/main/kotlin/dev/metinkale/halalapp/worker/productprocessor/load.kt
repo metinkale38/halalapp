@@ -4,10 +4,12 @@ import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.db.table.ProductsTable
+import dev.metinkale.halalapp.db.table.REPROCESS_PRIORITY_THRESHOLD
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.exists
+import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.leftJoin
@@ -19,9 +21,20 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 
 fun ProductProcessorWorker.load(): List<Product> {
+    val prioritizedProducts = loadPrioritizedProducts(10000)
     val missingProducts = loadMissingProducts(10000)
     val oldestProducts = loadOldestProcessedProducts(10000)
-    return missingProducts + oldestProducts;
+    return prioritizedProducts + missingProducts + oldestProducts;
+}
+
+private fun ProductProcessorWorker.loadPrioritizedProducts(limit: Int = 1000): List<Product> {
+    return ProductsTable
+        .innerJoin(ProcessedProductsTable, { ProductsTable.id }, { ProcessedProductsTable.id })
+        .select(ProductsTable.columns)
+        .where { ProcessedProductsTable.lastUpdated less REPROCESS_PRIORITY_THRESHOLD }
+        .orderBy(ProcessedProductsTable.lastUpdated to SortOrder.ASC)
+        .limit(limit)
+        .map { mapToProduct(it) }
 }
 
 
@@ -44,7 +57,10 @@ private fun ProductProcessorWorker.loadOldestProcessedProducts(limit: Int = 1000
     return ProductsTable
         .innerJoin(ProcessedProductsTable, { ProductsTable.id }, { ProcessedProductsTable.id })
         .select(ProductsTable.columns)
-        .where { ProcessedProductsTable.lastUpdated less startOfToday }
+        .where {
+            (ProcessedProductsTable.lastUpdated greaterEq REPROCESS_PRIORITY_THRESHOLD) and
+                    (ProcessedProductsTable.lastUpdated less startOfToday)
+        }
         .orderBy(ProcessedProductsTable.lastUpdated to SortOrder.ASC)
         .limit(limit)
         .map { mapToProduct(it) }
