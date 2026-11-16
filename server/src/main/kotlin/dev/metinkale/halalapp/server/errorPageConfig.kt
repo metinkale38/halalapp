@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.server
 import dev.metinkale.halalapp.common.HttpException
 import dev.metinkale.halalapp.html.errorPage
 import dev.metinkale.halalapp.html.notFoundPage
+import dev.metinkale.halalapp.ui.detail.productNotFoundPage
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -10,6 +11,7 @@ import io.ktor.server.application.install
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.contentType
+import io.ktor.server.request.path
 import io.ktor.server.response.respond
 
 fun Application.errorPageConfig(){
@@ -29,8 +31,14 @@ fun Application.errorPageConfig(){
             cause.printStackTrace()
         }
         status(HttpStatusCode.NotFound) { call, status ->
-            call.respondHtml(status) {
-                notFoundPage()
+            val path = call.request.path()
+            if (path.startsWith("/product/")) {
+                val barcode = path.removePrefix("/product/").substringBefore("/")
+                call.respondHtml(status) { productNotFoundPage(barcode) }
+            } else {
+                call.respondHtml(status) {
+                    notFoundPage()
+                }
             }
         }
     }
