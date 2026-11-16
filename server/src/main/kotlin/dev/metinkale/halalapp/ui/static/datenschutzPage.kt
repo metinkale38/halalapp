@@ -4,8 +4,9 @@ import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.component.card
 import kotlinx.html.*
 
-fun HTML.datenschutzPage() = template(
+fun HTML.datenschutzPage(isAdmin: Boolean = false) = template(
     "Datenschutzerklärung",
+    isAdmin = isAdmin,
     titleBlock = {
         h1 { +"Datenschutzerklärung" }
         h3 { +"Transparenz und Datenschutz für unsere Halal-App" }

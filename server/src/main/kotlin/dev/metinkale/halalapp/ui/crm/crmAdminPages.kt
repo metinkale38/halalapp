@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.ui.crm
 import dev.metinkale.halalapp.db.entity.Entity
 import dev.metinkale.halalapp.db.entity.Proposal
 import dev.metinkale.halalapp.db.table.CrmTable
+import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.domain.RequestStatus
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.html.formGroup
@@ -80,8 +81,9 @@ fun <T : Entity> HTML.crmEntityListPage(
             p(classes = "text-sm text-gray-600") { +"Keine Einträge gefunden." }
         }
     } else {
-        card("overflow-x-auto !p-0") {
-            table(classes = "min-w-full divide-y divide-gray-200 text-sm") {
+        card("mx-auto w-full max-w-full overflow-hidden !p-0") {
+            div(classes = "w-full overflow-x-auto") {
+                table(classes = "w-full min-w-[44rem] divide-y divide-gray-200 text-sm") {
                 thead(classes = "bg-gray-50") {
                     tr {
                         table.listFieldNames.forEach { name ->
@@ -97,7 +99,15 @@ fun <T : Entity> HTML.crmEntityListPage(
                         tr {
                             table.listFieldNames.forEach { name ->
                                 td(classes = "max-w-[24rem] truncate px-4 py-3 text-gray-700") {
-                                    +displayValue(entry.values[name])
+                                    if (table === ProductParentTable && (name == "child_name" || name == "parent_name")) {
+                                        val id = entry.values[if (name == "child_name") "child_id" else "parent_id"].orEmpty()
+                                        a(classes = "font-semibold text-indigo-600 hover:underline") {
+                                            href = "/product/$id"
+                                            +displayValue(entry.values[name])
+                                        }
+                                    } else {
+                                        +displayValue(entry.values[name])
+                                    }
                                 }
                             }
                             td(classes = "whitespace-nowrap px-4 py-3 text-right") {
@@ -107,6 +117,7 @@ fun <T : Entity> HTML.crmEntityListPage(
                                 }
                             }
                         }
+                    }
                     }
                 }
             }
@@ -177,6 +188,17 @@ fun <T : Entity> HTML.editCrmEntityPage(
         div(classes = "rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800") {
             span(classes = "font-semibold") { +"Auswirkung: " }
             +impact
+        }
+    }
+
+    if (table === ProductParentTable) {
+        val childId = values["child_id"].orEmpty()
+        val parentId = values["parent_id"].orEmpty()
+        if (childId.isNotBlank() || parentId.isNotBlank()) {
+            div(classes = "grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 md:grid-cols-2") {
+                linkedProduct("Dublette", childId, values["child_name"])
+                linkedProduct("Hauptprodukt", parentId, values["parent_name"])
+            }
         }
     }
 
@@ -328,6 +350,16 @@ fun <T : Entity> HTML.crmHistoryPage(
                 }
             }
         }
+    }
+}
+
+private fun FlowContent.linkedProduct(label: String, id: String, name: String?) {
+    if (id.isBlank()) return
+    a(classes = "block rounded-lg bg-white p-3 shadow-sm transition hover:shadow-md") {
+        href = "/product/$id"
+        p(classes = "text-xs font-semibold uppercase tracking-wide text-gray-500") { +label }
+        p(classes = "text-sm font-semibold text-gray-900") { +(name.orEmpty().ifBlank { id }) }
+        p(classes = "text-xs text-gray-400") { +id }
     }
 }
 

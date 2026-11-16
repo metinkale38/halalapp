@@ -4,6 +4,7 @@ import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.feature.product.productPage
 import dev.metinkale.halalapp.feature.product.productPageProposal
+import dev.metinkale.halalapp.server.isAdmin
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.html.*
 import io.ktor.server.plugins.*
@@ -20,7 +21,7 @@ fun Routing.detailRoutes() {
                 call.respondRedirect("/product/$it", permanent = true)
             } ?: run {
                 val entity = ProcessedProductsTable.findById(id)
-                if (entity != null) call.respondHtml { productPage(entity) }
+                if (entity != null) call.respondHtml { productPage(entity, call.isAdmin()) }
                 else call.respond(HttpStatusCode.NotFound)
             }
         }
@@ -29,7 +30,7 @@ fun Routing.detailRoutes() {
 
 
             val entity = ProcessedProductsTable.findById(id)
-            if (entity != null) call.respondHtml { productPageProposal(entity) }
+            if (entity != null) call.respondHtml { productPageProposal(entity, call.isAdmin()) }
             else call.respond(HttpStatusCode.NotFound)
         }
     }

@@ -15,6 +15,24 @@ import java.util.Date
 
 private val authToken = System.getenv("AUTH_TOKEN")
 
+val authEnabled: Boolean get() = authToken != "NO_AUTH"
+
+fun ApplicationCall.isAdmin(): Boolean =
+    !authEnabled || isAdminToken(request.cookies["halalapp_auth"])
+
+private fun isAdminToken(token: String?): Boolean {
+    if (token.isNullOrBlank()) return false
+    return runCatching {
+        JWT.require(Algorithm.HMAC256(authToken))
+            .withIssuer("halalapp")
+            .build()
+            .verify(token)
+            .getClaim("groups")
+            .asList(String::class.java)
+            ?.contains("Admin") == true
+    }.getOrDefault(false)
+}
+
 fun Application.authConfig() {
     if(authToken == "NO_AUTH") return
     install(Authentication) {

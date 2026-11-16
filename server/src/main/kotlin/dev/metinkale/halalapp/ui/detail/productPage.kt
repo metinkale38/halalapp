@@ -18,8 +18,9 @@ import kotlinx.datetime.format.char
 import kotlinx.html.*
 
 
-fun HTML.productPage(product: Product) = template(
+fun HTML.productPage(product: Product, isAdmin: Boolean = false) = template(
     product.brand + " " + product.name + " - HalalApp",
+    isAdmin = isAdmin,
     titleBlock = {
         span(classes = "text-lg font-semibold uppercase text-primary-100") {
             +(product.brand.ifBlank { "Unbekannte Marke" })

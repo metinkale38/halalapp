@@ -6,8 +6,9 @@ import dev.metinkale.halalapp.service.SearchResult
 import dev.metinkale.halalapp.ui.component.template
 import kotlinx.html.*
 
-fun HTML.searchPage(entity: SearchResult) = template(
+fun HTML.searchPage(entity: SearchResult, isAdmin: Boolean = false) = template(
     "Suche nach \"${entity.query}\" - HalalApp",
+    isAdmin = isAdmin,
     titleBlock = {
         h2 { +"Ergebnisse für: \"${entity.query}\"" }
     }) {

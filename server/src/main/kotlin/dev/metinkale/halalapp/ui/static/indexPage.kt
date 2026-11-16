@@ -34,11 +34,12 @@ private val forumCache = flow {
     }
 }.stateIn(CoroutineScope(Dispatchers.IO + SupervisorJob()), started = kotlinx.coroutines.flow.SharingStarted.Eagerly, initialValue = null)
 
-fun HTML.indexPage() = template(
+fun HTML.indexPage(isAdmin: Boolean = false) = template(
     title = "HalalApp – Dein smarter Begleiter im Supermarkt",
     head = {
         script { src = "/pwa.js" }
     },
+    isAdmin = isAdmin,
     titleBlock = {
         img(classes = "w-24") {
             src = "icons/icon.svg"

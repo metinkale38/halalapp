@@ -14,6 +14,7 @@ import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.crm.CrmEntryView
 import dev.metinkale.halalapp.ui.crm.crmEntityListPage
 import dev.metinkale.halalapp.ui.crm.crmHistoryPage
+import dev.metinkale.halalapp.ui.crm.displayValues
 import dev.metinkale.halalapp.ui.crm.editCrmEntityPage
 import dev.metinkale.halalapp.ui.crm.entryTitle
 import dev.metinkale.halalapp.ui.crm.getCrmFields
@@ -92,7 +93,7 @@ fun Routing.crmRoutes() = authenticated {
                             CrmEntryView(
                                 id = row[table.id].value,
                                 title = table.entryTitle(values),
-                                values = values,
+                                values = table.displayValues(values),
                             )
                         }
                     }
@@ -177,7 +178,7 @@ fun Routing.crmRoutes() = authenticated {
                     call.respondHtml {
                         editCrmEntityPage(
                             table = table,
-                            values = values,
+                            values = table.displayValues(values),
                             action = "/crm/${table.tableName}/$id/edit",
                             editing = true,
                             version = CrmAdminService.version(values),
@@ -208,7 +209,7 @@ fun Routing.crmRoutes() = authenticated {
                         call.respondHtml {
                             editCrmEntityPage(
                                 table = table,
-                                values = values,
+                                values = table.displayValues(values),
                                 action = "/crm/${table.tableName}/$id/edit",
                                 editing = true,
                                 errors = errors,
