@@ -6,9 +6,9 @@ BEGIN
     INTO owned
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = current_schema() AND c.relname = 'products' AND c.relkind = 'v';
+    WHERE n.nspname = 'public' AND c.relname = 'products' AND c.relkind = 'v';
 
     IF owned IS TRUE THEN
-        DROP VIEW products;
+        DROP VIEW public.products;
     END IF;
 END $$;

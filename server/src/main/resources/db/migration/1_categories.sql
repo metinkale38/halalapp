@@ -1,10 +1,10 @@
 DO $$
 BEGIN
-    IF to_regclass(current_schema() || '.categories') IS NULL THEN
-        CREATE TABLE categories (
+    IF to_regclass('public.categories') IS NULL THEN
+        CREATE TABLE public.categories (
             id          text PRIMARY KEY,
             name        text NOT NULL,
-            parent_id   text NULL REFERENCES categories(id) ON DELETE SET NULL,
+            parent_id   text NULL REFERENCES public.categories(id) ON DELETE SET NULL,
             description text NOT NULL DEFAULT ''
         );
     END IF;
@@ -12,10 +12,10 @@ END $$;
 
 DO $$
 BEGIN
-    IF to_regclass(current_schema() || '.category_mapping') IS NULL THEN
-        CREATE TABLE category_mapping (
+    IF to_regclass('public.category_mapping') IS NULL THEN
+        CREATE TABLE public.category_mapping (
             id          text PRIMARY KEY,
-            category_id text NOT NULL REFERENCES categories(id) ON DELETE CASCADE
+            category_id text NOT NULL REFERENCES public.categories(id) ON DELETE CASCADE
         );
     END IF;
 END $$;
@@ -24,9 +24,9 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = current_schema() AND table_name = 'products_off' AND column_name = 'categories_hierarchy'
+        WHERE table_schema = 'public' AND table_name = 'products_off' AND column_name = 'categories_hierarchy'
     ) THEN
-        ALTER TABLE products_off ADD COLUMN categories_hierarchy text[] NOT NULL DEFAULT '{}';
+        ALTER TABLE public.products_off ADD COLUMN categories_hierarchy text[] NOT NULL DEFAULT '{}';
     END IF;
 END $$;
 
@@ -34,9 +34,9 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes
-        WHERE schemaname = current_schema() AND indexname = 'idx_products_off_categories_hierarchy'
+        WHERE schemaname = 'public' AND indexname = 'idx_products_off_categories_hierarchy'
     ) THEN
-        CREATE INDEX idx_products_off_categories_hierarchy ON products_off USING GIN (categories_hierarchy);
+        CREATE INDEX idx_products_off_categories_hierarchy ON public.products_off USING GIN (categories_hierarchy);
     END IF;
 END $$;
 
@@ -44,9 +44,9 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = current_schema() AND table_name = 'products_custom' AND column_name = 'category_id'
+        WHERE table_schema = 'public' AND table_name = 'products_custom' AND column_name = 'category_id'
     ) THEN
-        ALTER TABLE products_custom ADD COLUMN category_id text NULL REFERENCES categories(id) ON DELETE SET NULL;
+        ALTER TABLE public.products_custom ADD COLUMN category_id text NULL REFERENCES public.categories(id) ON DELETE SET NULL;
     END IF;
 END $$;
 
@@ -54,9 +54,9 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_schema = current_schema() AND table_name = 'products_processed' AND column_name = 'category_id'
+        WHERE table_schema = 'public' AND table_name = 'products_processed' AND column_name = 'category_id'
     ) THEN
-        ALTER TABLE products_processed ADD COLUMN category_id text NULL;
+        ALTER TABLE public.products_processed ADD COLUMN category_id text NULL;
     END IF;
 END $$;
 
@@ -64,13 +64,13 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes
-        WHERE schemaname = current_schema() AND indexname = 'idx_products_processed_category'
+        WHERE schemaname = 'public' AND indexname = 'idx_products_processed_category'
     ) THEN
-        CREATE INDEX idx_products_processed_category ON products_processed (category_id);
+        CREATE INDEX idx_products_processed_category ON public.products_processed (category_id);
     END IF;
 END $$;
 
-INSERT INTO categories (id, name, parent_id, description) VALUES
+INSERT INTO public.categories (id, name, parent_id, description) VALUES
  ('sonstiges', 'Sonstiges', NULL,
   'Produkte, die sich nicht eindeutig einer Kategorie zuordnen lassen. Wir prüfen die Zutaten trotzdem auf tierische und alkoholische Bestandteile.'),
  ('babynahrung', 'Babynahrung', NULL,
@@ -95,7 +95,7 @@ ON CONFLICT (id) DO UPDATE
     SET description = EXCLUDED.description
     WHERE categories.description = '';
 
-INSERT INTO categories (id, name, parent_id, description) VALUES
+INSERT INTO public.categories (id, name, parent_id, description) VALUES
  ('glaeschen-breie', 'Gläschen & Breie', 'babynahrung',
   'Babygläschen und Breie – wir prüfen auf Gelatine, tierische Fette und versteckte Aromen.'),
  ('saeuglingsmilch', 'Säuglingsmilch', 'babynahrung',
