@@ -6,7 +6,9 @@ import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.db.entity.Classification
 import dev.metinkale.halalapp.db.entity.Ingredient
 import dev.metinkale.halalapp.db.entity.Product
+import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
+import dev.metinkale.halalapp.service.CategoryService
 import dev.metinkale.halalapp.html.*
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.statusBadgeComponent
@@ -22,6 +24,7 @@ fun HTML.productPage(product: Product, isAdmin: Boolean = false) = template(
     product.brand + " " + product.name + " - HalalApp",
     isAdmin = isAdmin,
     titleBlock = {
+        productCategoryLinks(product.categoryId)
         span(classes = "text-lg font-semibold uppercase text-primary-100") {
             +(product.brand.ifBlank { "Unbekannte Marke" })
         }
@@ -211,4 +214,23 @@ private val GermanDateTimeFormat = LocalDate.Format {
     monthNumber(Padding.ZERO)
     char('.')
     year()
+}
+
+private fun FlowContent.productCategoryLinks(categoryId: String?) {
+    if (categoryId == null) return
+    val category = CategoriesTable.findById(categoryId) ?: return
+    val parent = category.parentId?.let { CategoriesTable.findById(it) }
+    div(classes = "flex flex-wrap items-center justify-center gap-1 text-sm text-primary-100/90") {
+        if (parent != null) {
+            a(classes = "hover:underline") {
+                href = CategoryService.categoryPath(parent)
+                +parent.name
+            }
+            span(classes = "text-primary-100/70") { +" / " }
+        }
+        a(classes = "hover:underline") {
+            href = CategoryService.categoryPath(category)
+            +category.name
+        }
+    }
 }
