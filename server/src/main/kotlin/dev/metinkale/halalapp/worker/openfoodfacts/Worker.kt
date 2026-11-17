@@ -6,8 +6,11 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.HttpTimeoutConfig
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -19,6 +22,9 @@ object OpenFoodFactsWorker {
             requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
             connectTimeoutMillis = 15_000
             socketTimeoutMillis = 60_000
+        }
+        install(ContentNegotiation) {
+            json(Json { ignoreUnknownKeys = true })
         }
     }
 
@@ -54,10 +60,14 @@ object OpenFoodFactsWorker {
 
         if (needsFullSync) {
             importProducts("https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz")
-            importIngredientTaxonomies("https://static.openfoodfacts.org/data/taxonomies/ingredients.json")
-            importIngredientTaxonomies("https://static.openfoodfacts.org/data/taxonomies/allergens.json")
             MetadataTable.setValue("LAST_OFF_FULL_IMPORT", Instant.now().toString())
             nextTimestampStart?.let { MetadataTable.setValue("LAST_OFF_INCREMENTAL_IMPORT", it) }
+        }
+
+        if (needsFullSync || MetadataTable.getValue("LAST_TAXONOMY_IMPORT") == null) {
+            importIngredientTaxonomies("https://static.openfoodfacts.org/data/taxonomies/ingredients.json")
+            importIngredientTaxonomies("https://static.openfoodfacts.org/data/taxonomies/allergens.json")
+            MetadataTable.setValue("LAST_TAXONOMY_IMPORT", Instant.now().toString())
         }
     }
 }

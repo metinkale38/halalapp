@@ -5,8 +5,12 @@ import java.time.LocalDate
 
 
 private val year = LocalDate.now().year
+private const val DEFAULT_DESCRIPTION =
+    "Mach deinen Einkauf einfach: Mit der HalalApp erkennst du Halal-Produkte sofort. Dein smarter Begleiter für jeden Supermarkt-Besuch."
+
 fun HTML.template(
     title: String = "HalalApp",
+    description: String = DEFAULT_DESCRIPTION,
     head: HEAD.() -> Unit = {},
     isAdmin: Boolean = false,
     titleBlock: (FlowContent.() -> Unit)? = null,
@@ -54,8 +58,7 @@ fun HTML.template(
         }
         meta {
             attributes["property"] = "og:description"
-            content =
-                "Mach deinen Einkauf einfach: Mit der HalalApp erkennst du Halal-Produkte sofort. Dein smarter Begleiter für jeden Supermarkt-Besuch."
+            content = description
         }
         meta {
             attributes["property"] = "og:image"
@@ -63,8 +66,7 @@ fun HTML.template(
         }
         meta {
             name = "description"
-            content =
-                "Mach deinen Einkauf einfach: Mit der HalalApp erkennst du Halal-Produkte sofort. Dein smarter Begleiter für jeden Supermarkt-Besuch."
+            content = description
         }
         head.invoke(this)
     }

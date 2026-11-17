@@ -7,6 +7,7 @@ data class CustomProduct(
     val name: String,
     val brand: String,
     val images: ProductImages,
+    val categoryId: String? = null,
 ) : Entity
 
 data class CustomProductProposal(
@@ -23,4 +24,5 @@ data class CustomProductProposal(
     val status: dev.metinkale.halalapp.domain.RequestStatus,
     val date: Instant,
     val imageDataUri: String?,
+    val categoryId: String? = null,
 )

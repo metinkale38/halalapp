@@ -17,12 +17,14 @@ data class CustomProductFormData(
     val animal: String = "",
     val alcohol: String = "",
     val note: String = "",
+    val categoryId: String = "",
 )
 
 fun HTML.customProductFormPage(
     data: CustomProductFormData,
     animalOptions: List<Pair<String, String>>,
     alcoholOptions: List<Pair<String, String>>,
+    categoryOptions: List<Pair<String, String>> = emptyList(),
     editing: Boolean = false,
     existingFrontUrl: String? = null,
     error: String? = null,
@@ -77,6 +79,13 @@ fun HTML.customProductFormPage(
                         required = true
                     }
                 }
+
+                selectField(
+                    "Kategorie (optional)",
+                    "categoryId",
+                    listOf("" to "Keine Kategorie") + categoryOptions,
+                    data.categoryId,
+                )
 
                 if (!editing) {
                     markdownField(

@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.ui.static
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.flarum.FlarumResponse
 import dev.metinkale.halalapp.ui.component.flarum.renderFlarumFeed
+import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.ui.component.template
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -77,6 +78,13 @@ fun HTML.indexPage(isAdmin: Boolean = false) = template(
                 attributes["type"] = "button"
                 style = "display: none;"
                 +"Auf dem Smartphone installieren"
+            }
+
+            if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS || isAdmin) {
+                a(classes = "w-full btn-secondary text-center") {
+                    href = "/categories"
+                    +"Kategorien durchstöbern"
+                }
             }
         }
     }

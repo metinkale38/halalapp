@@ -6,13 +6,33 @@ import dev.metinkale.halalapp.db.entity.ProductInsights
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
 import dev.metinkale.halalapp.domain.Confidence
+import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 private val unknownIngredient = ClassificationsTable.findById("unknown_ingredient")!!
 
-fun process(products: List<Product>): List<Product> = transaction {
+fun process(sources: List<SourceProduct>): List<Product> = transaction {
+    val products = sources.map { mapToProduct(it) }
     val insights = ProductInsightsTable.findAllByBarcode(products.map { it.id }).groupBy { it.product_id }
-    products.map { it.checkEmpty().processTags().processInsights(insights[it.id] ?: emptyList()) }
+    products.mapIndexed { index, product ->
+        product.checkEmpty()
+            .processTags()
+            .processInsights(insights[product.id] ?: emptyList())
+            .withCategory(sources[index])
+    }
+}
+
+private fun Product.withCategory(source: SourceProduct): Product {
+    val categoryId = when {
+        source.source == ProductSource.CUSTOM -> source.customCategoryId ?: CategoryResolver.OTHER
+        status.contains(Status.INCOMPLETE) -> null
+        else -> CategoryResolver.resolveForProduct(
+            source.categoriesHierarchy,
+            source.tags,
+            source.ingredients.size,
+        )
+    }
+    return copy(categoryId = categoryId)
 }
 
 private fun Product.checkEmpty(): Product {
@@ -56,8 +76,3 @@ private fun Product.processInsights(insights: List<ProductInsights>): Product {
         confidence = Confidence.MANUFACTURER
     )
 }
-
-
-
-
-

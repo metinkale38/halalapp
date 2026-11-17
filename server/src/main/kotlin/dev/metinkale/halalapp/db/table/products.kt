@@ -9,7 +9,7 @@ import org.jetbrains.exposed.v1.json.jsonb
 
 private val productJson = Json { ignoreUnknownKeys = true }
 
-open class ProductsTable(table: String = "products") : IdTable<String>(table) {
+open class ProductsTable(table: String) : IdTable<String>(table) {
 
     override val id = text("id").entityId()
     override val primaryKey = PrimaryKey(id)
@@ -21,7 +21,5 @@ open class ProductsTable(table: String = "products") : IdTable<String>(table) {
     val traces = array("traces", TextColumnType())
     val images = jsonb<ProductImages>("images", productJson)
     val tags = array("tags", TextColumnType())
-
-    companion object : ProductsTable()
 }
 

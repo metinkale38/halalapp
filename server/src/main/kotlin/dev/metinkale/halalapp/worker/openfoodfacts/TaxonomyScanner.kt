@@ -9,14 +9,7 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 
 @Serializable
 private data class Entry(
-    val name: Map<String, String>,
-    val vegan: EnValue? = null,
-    val vegetarian: EnValue? = null,
-)
-
-@Serializable
-private data class EnValue(
-    val en: String,
+    val name: Map<String, String> = emptyMap(),
 )
 
 
@@ -26,9 +19,13 @@ suspend fun OpenFoodFactsWorker.importIngredientTaxonomies(url: String) {
     transaction {
         entries.entries.forEach { (key, value) ->
             val localizedName = value.name["de"] ?: value.name["en"] ?: key
-            IngredientsTable.upsert {
+            IngredientsTable.upsert(
+                IngredientsTable.id,
+                onUpdateExclude = listOf(IngredientsTable.classification),
+            ) {
                 it[id] = key
                 it[name] = localizedName
+                it[classification] = "unknown_ingredient"
             }
         }
     }

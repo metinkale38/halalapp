@@ -3,10 +3,13 @@ package dev.metinkale.halalapp.worker.openfoodfacts
 import dev.metinkale.halalapp.db.entity.ProductComponent
 import dev.metinkale.halalapp.db.entity.ProductImages
 import dev.metinkale.halalapp.db.table.ProductsTable
+import dev.metinkale.halalapp.worker.productprocessor.CategoryResolver
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.batchUpsert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -16,6 +19,8 @@ import java.util.zip.GZIPInputStream
 
 private object ProductTable_OFF : ProductsTable("products_off") {
     val lastSeen = timestamp("last_seen")
+    val categoriesHierarchy = array("categories_hierarchy", TextColumnType())
+    val categoryId = text("category_id").nullable()
 }
 
 
@@ -38,6 +43,7 @@ private val meat = listOf("en:meats-and-their-products", "en:prepared-meats", "e
 
 
 suspend fun OpenFoodFactsWorker.importProducts(url: String) {
+    CategoryResolver.reload()
     val now = Instant.now()
     val startTime = System.currentTimeMillis()
     val counter = AtomicInteger(0)
@@ -63,7 +69,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                                 it.product_name_en,
                                                 it.product_name
                                             ).any { it.isNotBlank() }
-                                }.filter { it.product_name_de?.isBlank() == true }
+                                }
                         ) { p ->
 
                             val frontImages: Map<Int, String> =
@@ -71,6 +77,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                     val lang =
                                         listOf("de", "en", langs.keys.first()).firstOrNull { langs.containsKey(it) }
                                     val image = langs[lang]!!
+                                    val revision = image.rev.jsonPrimitive.content
                                     val padded = p.code.padStart(13, '0')
                                     val p1 = padded.substring(0, 3)
                                     val p2 = padded.substring(3, 6)
@@ -78,7 +85,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                     val p4 = padded.substring(9, 13)
 
                                     image.sizes.entries.associate { (k, v) ->
-                                        val filename = "front_${lang}.${image.rev}.${k}"
+                                        val filename = "front_${lang}.${revision}.${k}"
                                         val url =
                                             "https://images.openfoodfacts.org/images/products/$p1/$p2/$p3/$p4/$filename.jpg"
                                         v.w to url
@@ -102,6 +109,14 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                             if (p.categories_tags.any { it in alcohol }) tags.add("alcoholic_beverage")
                             if (p.categories_tags.any { it in meat }) tags.add("meat")
 
+                            val categories = p.categories_hierarchy.ifEmpty { p.categories_tags }
+                            val components = p.ingredients.flatMap { map(it) }
+                            val categoryId = CategoryResolver.resolveForProduct(
+                                categories,
+                                tags,
+                                components.size,
+                            )
+
                             this[ProductTable_OFF.id] = p.code
                             this[ProductTable_OFF.name] = listOfNotNull(
                                 p.product_name_de, p.product_name_en, p.product_name
@@ -113,11 +128,13 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                     p.ingredients_text_en,
                                     p.ingredients_text
                                 ).firstOrNull { it.isNotBlank() } ?: ""
-                            this[ProductTable_OFF.ingredients] = p.ingredients.flatMap { map(it) }
+                            this[ProductTable_OFF.ingredients] = components
                             this[ProductTable_OFF.allergens] = p.allergens_tags
                             this[ProductTable_OFF.traces] = p.traces_tags
                             this[ProductTable_OFF.images] = ProductImages(frontImages)
                             this[ProductTable_OFF.tags] = tags
+                            this[ProductTable_OFF.categoriesHierarchy] = categories
+                            this[ProductTable_OFF.categoryId] = categoryId
                             this[ProductTable_OFF.lastSeen] = now
                         }
 

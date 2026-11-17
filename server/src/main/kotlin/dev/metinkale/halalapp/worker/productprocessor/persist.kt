@@ -8,6 +8,7 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import java.time.Instant
 
 fun ProductProcessorWorker.persist(products: List<Product>) {
+    if (products.isEmpty()) return
     val now = Instant.now()
 
     ProcessedProductsTable.deleteWhere { ProcessedProductsTable.id inList products.map { it.id } }
@@ -26,6 +27,7 @@ fun ProductProcessorWorker.persist(products: List<Product>) {
         this[ProcessedProductsTable.tags] = it.tags
         this[ProcessedProductsTable.status] = it.status.map { it.name }
         this[ProcessedProductsTable.confidence] = it.confidence
+        this[ProcessedProductsTable.categoryId] = it.categoryId
         this[ProcessedProductsTable.lastUpdated] = now
 
     }

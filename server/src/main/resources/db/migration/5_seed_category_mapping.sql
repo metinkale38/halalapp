@@ -1,0 +1,62 @@
+INSERT INTO public.category_mapping (id, category_id) VALUES
+    ('en:beverages', 'getraenke'),
+    ('en:waters', 'getraenke'),
+    ('en:fruit-juices', 'getraenke'),
+    ('en:fruit-nectars', 'getraenke'),
+    ('en:sodas', 'getraenke'),
+    ('en:coffees', 'getraenke'),
+    ('en:teas', 'getraenke'),
+    ('en:energy-drinks', 'getraenke'),
+
+    ('en:dairies', 'milchprodukte-kaese'),
+    ('en:cheeses', 'milchprodukte-kaese'),
+    ('en:yogurts', 'milchprodukte-kaese'),
+    ('en:milks', 'milchprodukte-kaese'),
+    ('en:butters', 'milchprodukte-kaese'),
+    ('en:eggs', 'milchprodukte-kaese'),
+    ('en:fermented-milk-products', 'milchprodukte-kaese'),
+    ('en:quarks', 'milchprodukte-kaese'),
+
+    ('en:breads', 'brot-backwaren'),
+    ('en:cakes', 'brot-backwaren'),
+    ('en:pastries', 'brot-backwaren'),
+    ('en:viennoiseries', 'brot-backwaren'),
+    ('en:bakery-products', 'brot-backwaren'),
+
+    ('en:snacks', 'suesswaren-snacks'),
+    ('en:sweet-snacks', 'suesswaren-snacks'),
+    ('en:chocolates', 'suesswaren-snacks'),
+    ('en:candies', 'suesswaren-snacks'),
+    ('en:biscuits', 'suesswaren-snacks'),
+    ('en:chips-and-fries', 'suesswaren-snacks'),
+    ('en:crisps', 'suesswaren-snacks'),
+    ('en:ice-creams', 'suesswaren-snacks'),
+
+    ('en:breakfast-cereals', 'fruehstueck-aufstriche'),
+    ('en:spreads', 'fruehstueck-aufstriche'),
+    ('en:jams', 'fruehstueck-aufstriche'),
+    ('en:honeys', 'fruehstueck-aufstriche'),
+    ('en:chocolate-spreads', 'fruehstueck-aufstriche'),
+    ('en:nut-butters', 'fruehstueck-aufstriche'),
+
+    ('en:meals', 'fertiggerichte-konserven'),
+    ('en:soups', 'fertiggerichte-konserven'),
+    ('en:canned-foods', 'fertiggerichte-konserven'),
+    ('en:frozen-foods', 'fertiggerichte-konserven'),
+    ('en:pasta-dishes', 'fertiggerichte-konserven'),
+
+    ('en:fishes', 'fisch-meeresfruechte'),
+    ('en:seafood', 'fisch-meeresfruechte'),
+    ('en:crustaceans', 'fisch-meeresfruechte'),
+    ('en:mollusc', 'fisch-meeresfruechte'),
+
+    ('en:condiments', 'saucen-wuerzmittel'),
+    ('en:sauces', 'saucen-wuerzmittel'),
+    ('en:salad-dressings', 'saucen-wuerzmittel'),
+    ('en:vegetable-oils', 'saucen-wuerzmittel'),
+    ('en:vinegars', 'saucen-wuerzmittel'),
+    ('en:spices', 'saucen-wuerzmittel'),
+
+    ('en:baby-foods', 'babynahrung'),
+    ('en:infant-formulas', 'babynahrung')
+ON CONFLICT (id) DO NOTHING;

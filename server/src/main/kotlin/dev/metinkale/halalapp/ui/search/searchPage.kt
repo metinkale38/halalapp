@@ -1,6 +1,5 @@
 package dev.metinkale.halalapp.ui.search
 
-import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.service.SearchResult
 import dev.metinkale.halalapp.ui.component.template
@@ -20,25 +19,6 @@ fun HTML.searchPage(entity: SearchResult, isAdmin: Boolean = false) = template(
 
 
     div("flex wrap w-full justify-between gap-4 flex-col lg:flex-row") {
-
-        div("grid grid-cols-2 gap-2 md:gap-4 lg:gap-2") {
-            listOf(
-                Confidence.MANUFACTURER to "Nur mit Produktinformationen",
-                Confidence.INGREDIENTS to "Alle Produkte anzeigen"
-            ).forEach { (confidence, txt) ->
-                if (entity.confidence == confidence || (entity.confidence == null && confidence == Confidence.INGREDIENTS)) {
-                    button(classes = "px-2 py-1.5 text-sm font-medium rounded-md bg-white shadow-sm text-slate-900") {
-                        +txt
-                    }
-                } else {
-                    button(classes = "cursor-pointer px-2 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors ${if (entity.confidence == null) "pointer-events-none" else ""}".trim()) {
-                        onClick = "swapUrl('${entity.copy(confidence = confidence).url}')"
-                        +txt
-                    }
-                }
-            }
-        }
-
 
         div("grid grid-cols-2 gap-4 sm:grid-cols-[max-content_max-content_max-content_max-content] md:gap-8 lg:gap-2") {
             Status.entries.forEach { status ->

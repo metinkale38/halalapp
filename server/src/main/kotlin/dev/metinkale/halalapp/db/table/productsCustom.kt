@@ -26,12 +26,14 @@ object ProductsCustomTable : IdTable<String>("products_custom") {
     val tags = array("tags", TextColumnType())
     val traces = array("traces", TextColumnType())
     val allergens = array("allergens", TextColumnType())
+    val categoryId = text("category_id").nullable()
 
     fun map(row: ResultRow) = CustomProduct(
         id = row[id].value,
         name = row[name],
         brand = row[brand],
         images = row[images],
+        categoryId = row[categoryId],
     )
 
     fun findById(id: String): CustomProduct? = transaction {
