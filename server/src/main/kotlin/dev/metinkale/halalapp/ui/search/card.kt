@@ -17,21 +17,26 @@ fun FlowContent.productCard(product: Product, insightDate: LocalDate? = null) {
                 loading = ImgLoading.lazy
                 src = product.images.getFrontPhoto(0)
             }
-            div("flex flex-col p-3 gap-1 flex-1 min-w-0") {
-
-                div(classes = "text-xs font-semibold tracking-wider text-indigo-600 uppercase truncate") {
-                    +product.brand.ifBlank { "Unbekannt" }
-                }
-                div(classes = "flex flex-wrap items-center gap-1.5") {
-                    product.status.forEach { status -> statusBadgeComponent(status) }
-                    if (product.confidence == Confidence.INGREDIENTS) {
-                        statusBadgeComponent("Laut Zutatenliste", Status.INCOMPLETE)
+            div("flex flex-col justify-center p-3 gap-1.5 flex-1 min-w-0") {
+                div("flex items-start justify-between gap-2") {
+                    div(classes = "min-w-0 flex-1 truncate text-xs font-semibold tracking-wider text-indigo-600 uppercase") {
+                        +product.brand.ifBlank { "Unbekannt" }
+                    }
+                    div(classes = "flex flex-wrap items-center justify-end gap-1.5") {
+                        product.status.forEach { status -> statusBadgeComponent(status) }
+                        if (product.confidence == Confidence.INGREDIENTS) {
+                            statusBadgeComponent("Laut Zutatenliste", Status.INCOMPLETE)
+                        }
                     }
                 }
-                div(classes = "text-base font-medium text-gray-900 leading-snug truncate") { +(product.name) }
-                insightDate?.let { date ->
-                    div(classes = "mt-auto self-end whitespace-nowrap text-right text-xs text-gray-500") {
-                        +"Herstellerinfo vom ${date.day.toString().padStart(2, '0')}.${(date.month.ordinal + 1).toString().padStart(2, '0')}.${date.year}"
+                div("flex items-center justify-between gap-2") {
+                    div(classes = "min-w-0 flex-1 truncate text-base font-medium leading-snug text-gray-900") {
+                        +(product.name)
+                    }
+                    insightDate?.let { date ->
+                        div(classes = "shrink-0 whitespace-nowrap text-right text-xs text-gray-500") {
+                            +"Herstellerinfo vom ${date.day.toString().padStart(2, '0')}.${(date.month.ordinal + 1).toString().padStart(2, '0')}.${date.year}"
+                        }
                     }
                 }
             }
