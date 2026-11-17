@@ -66,7 +66,7 @@ object ProductInsightsService {
             }
     }
 
-    fun preview(limit: Int = 4): List<InsightProduct> = transaction {
+    fun preview(limit: Int = 8): List<InsightProduct> = transaction {
         val (query, latestDate) = insightsQuery(defaultStatus)
         query
             .orderBy(latestDate to SortOrder.DESC, ProcessedProductsTable.name to SortOrder.ASC)
