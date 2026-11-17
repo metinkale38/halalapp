@@ -111,6 +111,7 @@ object CategoryService {
 
         val products = query
             .orderBy(
+                statusRankExpression() to SortOrder.ASC,
                 ProcessedProductsTable.confidence to SortOrder.DESC,
                 ProcessedProductsTable.name to SortOrder.ASC,
             )
