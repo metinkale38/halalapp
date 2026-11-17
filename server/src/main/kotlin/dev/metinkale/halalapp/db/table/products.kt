@@ -15,11 +15,11 @@ open class ProductsTable(table: String) : IdTable<String>(table) {
     override val primaryKey = PrimaryKey(id)
     val name = text("name")
     val brand = text("brand")
-    val ingredients = jsonb<List<ProductComponent>>("ingredients", Json.Default)
+    val ingredients = jsonb<List<ProductComponent>>("ingredients", productJson)
     val ingredientsText = text("ingredients_text")
     val allergens = array("allergens", TextColumnType())
     val traces = array("traces", TextColumnType())
-    val images = jsonb<ProductImages>("images", Json.Default)
+    val images = jsonb<ProductImages>("images", productJson)
     val tags = array("tags", TextColumnType())
 }
 
