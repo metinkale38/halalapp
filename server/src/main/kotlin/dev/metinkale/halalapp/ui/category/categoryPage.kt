@@ -20,7 +20,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
     titleBlock = {
         hub.parent?.let { parent ->
             a(classes = "text-sm text-primary-200 hover:underline") {
-                href = "/kategorie/${parent.id}"
+                href = "/category/${parent.id}"
                 +parent.name
             }
         }
@@ -37,7 +37,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
         div(classes = "flex flex-wrap gap-2") {
             hub.children.forEach { child ->
                 a(classes = "rounded-full bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50") {
-                    href = "/kategorie/${child.id}"
+                    href = "/category/${child.id}"
                     +child.name
                 }
             }
@@ -59,7 +59,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
             div(classes = "flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 mt-6 rounded-lg shadow-sm") {
                 if (hub.page > 1) {
                     a(classes = "text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2") {
-                        href = "/kategorie/${hub.category.id}?page=${hub.page - 1}"
+                        href = "/category/${hub.category.id}?page=${hub.page - 1}"
                         +"« Zurück"
                     }
                 } else {
@@ -70,7 +70,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
                 }
                 if (hub.page < hub.totalPages) {
                     a(classes = "text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2") {
-                        href = "/kategorie/${hub.category.id}?page=${hub.page + 1}"
+                        href = "/category/${hub.category.id}?page=${hub.page + 1}"
                         +"Weiter »"
                     }
                 } else {
@@ -97,14 +97,14 @@ fun HTML.categoriesPage(
                 categories.forEach { (top, children) ->
                     div {
                         a(classes = "text-base font-semibold text-indigo-600 hover:underline") {
-                            href = "/kategorie/${top.id}"
+                            href = "/category/${top.id}"
                             +top.name
                         }
                         if (children.isNotEmpty()) {
                             div(classes = "mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600") {
                                 children.forEach { child ->
                                     a(classes = "hover:text-indigo-600 hover:underline") {
-                                        href = "/kategorie/${child.id}"
+                                        href = "/category/${child.id}"
                                         +child.name
                                     }
                                 }

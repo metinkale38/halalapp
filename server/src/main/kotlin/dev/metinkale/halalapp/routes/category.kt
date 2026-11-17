@@ -14,11 +14,11 @@ import io.ktor.server.routing.get
 private const val BASE_URL = "https://halalapp.de"
 
 fun Routing.categoryRoutes() {
-    get("/kategorien") {
+    get("/categories") {
         call.respondHtml { categoriesPage(CategoryService.topLevelWithChildren(), call.isAdmin()) }
     }
 
-    get("/kategorie/{id}") {
+    get("/category/{id}") {
         val id = call.parameters["id"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val hub = CategoryService.hub(id, page, 24)
@@ -28,7 +28,7 @@ fun Routing.categoryRoutes() {
 
     get("/sitemap.xml") {
         val urls = CategoryService.indexableCategories().joinToString("\n") {
-            "  <url><loc>$BASE_URL/kategorie/${it.id}</loc></url>"
+            "  <url><loc>$BASE_URL/category/${it.id}</loc></url>"
         }
         val xml = """
             <?xml version="1.0" encoding="UTF-8"?>

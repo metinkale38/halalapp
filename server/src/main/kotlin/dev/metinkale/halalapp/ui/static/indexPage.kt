@@ -80,7 +80,7 @@ fun HTML.indexPage(isAdmin: Boolean = false) = template(
             }
 
             a(classes = "w-full btn-secondary text-center") {
-                href = "/kategorien"
+                href = "/categories"
                 +"Kategorien durchstöbern"
             }
         }
