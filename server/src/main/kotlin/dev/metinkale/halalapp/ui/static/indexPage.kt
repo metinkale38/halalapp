@@ -99,10 +99,7 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
         div(classes = "flex flex-col gap-3") {
             div(classes = "flex items-end justify-between gap-3") {
                 div {
-                    h4 { +"Neue Produktinformationen" }
-                    p(classes = "text-sm text-gray-600") {
-                        +"Zuletzt hinzugefügte Herstellerinformationen."
-                    }
+                    h4 { +"Neue Herstellerinformationen" }
                 }
                 a(classes = "whitespace-nowrap text-sm font-semibold text-primary hover:underline") {
                     href = "/insights"
@@ -114,7 +111,7 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
             }
             a(classes = "w-full btn-secondary text-center") {
                 href = "/insights"
-                +"Alle Produktinformationen anzeigen"
+                +"Alle Herstellerinformationen anzeigen"
             }
         }
     }

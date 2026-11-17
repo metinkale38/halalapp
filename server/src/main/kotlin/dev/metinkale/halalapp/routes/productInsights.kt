@@ -12,7 +12,6 @@ private const val INSIGHTS_PAGE_SIZE = 20
 
 fun Routing.productInsightsRoutes() {
     get("/insights") {
-        val query = call.request.queryParameters["q"]?.trim().orEmpty()
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val status = call.request.queryParameters.getAll("status")
             ?.takeIf { it.isNotEmpty() }
@@ -20,7 +19,7 @@ fun Routing.productInsightsRoutes() {
             ?.toSet()
             ?: ProductInsightsService.defaultStatus
 
-        val data = ProductInsightsService.page(query, page, INSIGHTS_PAGE_SIZE, status)
+        val data = ProductInsightsService.page(page, INSIGHTS_PAGE_SIZE, status)
         call.respondHtml { productInsightsPage(data, call.isAdmin()) }
     }
 }

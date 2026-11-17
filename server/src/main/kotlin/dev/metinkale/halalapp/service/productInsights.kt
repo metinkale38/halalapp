@@ -21,8 +21,6 @@ import org.jetbrains.exposed.v1.core.max
 import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import kotlin.math.ceil
 
 data class InsightProduct(
@@ -31,7 +29,6 @@ data class InsightProduct(
 )
 
 data class InsightsPage(
-    val query: String,
     val items: List<InsightProduct>,
     val totalCount: Int,
     val page: Int,
@@ -41,13 +38,11 @@ data class InsightsPage(
     val totalPages: Int = if (totalCount == 0) 0 else ceil(totalCount.toDouble() / pageSize).toInt()
 
     fun url(
-        query: String = this.query,
         page: Int = this.page,
         status: Set<Status> = this.status,
     ): String = buildString {
         append("/insights")
         val params = mutableListOf<String>()
-        if (query.isNotBlank()) params += "q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
         if (page > 1) params += "page=$page"
         if (status != ProductInsightsService.defaultStatus) {
             status.sortedBy { it.ordinal }.forEach { params += "status=${it.name.lowercase()}" }
@@ -72,7 +67,7 @@ object ProductInsightsService {
     }
 
     fun preview(limit: Int = 3): List<InsightProduct> = transaction {
-        val (query, latestDate) = insightsQuery("", defaultStatus)
+        val (query, latestDate) = insightsQuery(defaultStatus)
         query
             .orderBy(latestDate to SortOrder.DESC, ProcessedProductsTable.name to SortOrder.ASC)
             .limit(limit)
@@ -80,23 +75,11 @@ object ProductInsightsService {
     }
 
     fun page(
-        search: String,
         requestedPage: Int,
         pageSize: Int,
         status: Set<Status> = defaultStatus,
     ): InsightsPage = transaction {
-        if (search.isNotBlank() && search.length < 3) {
-            return@transaction InsightsPage(
-                query = search,
-                items = emptyList(),
-                totalCount = 0,
-                page = 1,
-                pageSize = pageSize,
-                status = status,
-            )
-        }
-
-        val (query, latestDate) = insightsQuery(search, status)
+        val (query, latestDate) = insightsQuery(status)
         val totalCount = query.count().toInt()
         val totalPages = if (totalCount == 0) 0 else ceil(totalCount.toDouble() / pageSize).toInt()
         val page = requestedPage.coerceIn(1, totalPages.coerceAtLeast(1))
@@ -109,7 +92,6 @@ object ProductInsightsService {
             .map { map(it, latestDate) }
 
         InsightsPage(
-            query = search,
             items = items,
             totalCount = totalCount,
             page = page,
@@ -119,7 +101,6 @@ object ProductInsightsService {
     }
 
     private fun insightsQuery(
-        search: String,
         status: Set<Status>,
     ): Pair<Query, ExpressionWithColumnType<java.time.LocalDate?>> {
         val maxDate = ProductInsightsTable.date.max()
@@ -134,7 +115,6 @@ object ProductInsightsService {
         val filters = buildList<Op<Boolean>> {
             add(ProcessedProductsTable.filter)
             add(InsightsStatusAllInArray(ProcessedProductsTable.status, arrayParam(status.map { it.name })))
-            if (search.length >= 3) add(SearchFilter(search))
         }
 
         val fields: List<Expression<*>> = ProcessedProductsTable.columns
