@@ -106,7 +106,7 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
                     +"Alle anzeigen"
                 }
             }
-            div(classes = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5") {
+            div(classes = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4") {
                 insights.forEach { insight ->
                     insightPreviewCard(insight)
                 }
