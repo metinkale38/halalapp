@@ -1,9 +1,10 @@
 package dev.metinkale.halalapp.worker.productprocessor
 
+import dev.metinkale.halalapp.db.entity.OTHER_CATEGORY_ID
 import dev.metinkale.halalapp.db.table.CategoryMappingTable
 
 object CategoryResolver {
-    const val OTHER = "sonstiges"
+    const val OTHER = OTHER_CATEGORY_ID
 
     @Volatile
     private var mapping: Map<String, String> = emptyMap()
