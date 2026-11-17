@@ -92,7 +92,7 @@ fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any?>> {
             Select(
                 "Kategorie",
                 "category_id",
-                CategoriesTable.allOrdered().map { it.id to it.name },
+                CategoriesTable.leafOrdered().map { it.id to it.name },
                 CategoryMappingTable.categoryId,
                 { this[CategoryMappingTable.categoryId] },
                 { this[CategoryMappingTable.categoryId] = it },

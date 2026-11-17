@@ -278,7 +278,7 @@ object CustomProductService {
         ids.mapNotNull { ClassificationsTable.findById(it)?.name }
 
     fun categoryOptions(): List<Pair<String, String>> =
-        CategoriesTable.allOrdered().map { it.id to it.name }
+        CategoriesTable.leafOrdered().map { it.id to it.name }
 
     fun categoryNames(): Map<String, String> =
         CategoriesTable.allOrdered().associate { it.id to it.name }

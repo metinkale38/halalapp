@@ -32,6 +32,12 @@ object CategoriesTable : CrmTable<Category>("categories") {
     fun allOrdered(): List<Category> = transaction {
         selectAll().map { map(it) }.sortedWith(categoryOrder)
     }
+
+    fun leafOrdered(): List<Category> {
+        val all = allOrdered()
+        val parentIds = all.mapNotNull { it.parentId }.toSet()
+        return all.filter { it.id !in parentIds }
+    }
 }
 
 object CategoryMappingTable : CrmTable<CategoryMapping>("category_mapping") {
