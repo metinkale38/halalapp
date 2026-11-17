@@ -7,6 +7,7 @@ import dev.metinkale.halalapp.ui.category.categoryHubPage
 import io.ktor.http.ContentType
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.NotFoundException
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
@@ -18,17 +19,32 @@ fun Routing.categoryRoutes() {
         call.respondHtml { categoriesPage(CategoryService.topLevelWithChildren(), call.isAdmin()) }
     }
 
+    get("/category/{parent}/{child}") {
+        val parentId = call.parameters["parent"] ?: throw NotFoundException("Kategorie nicht gefunden")
+        val childId = call.parameters["child"] ?: throw NotFoundException("Kategorie nicht gefunden")
+        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+        val hub = CategoryService.hub(childId, page, 24)
+            ?: throw NotFoundException("Kategorie nicht gefunden")
+        if (hub.category.parentId != parentId) throw NotFoundException("Kategorie nicht gefunden")
+        call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
+    }
+
     get("/category/{id}") {
         val id = call.parameters["id"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val hub = CategoryService.hub(id, page, 24)
             ?: throw NotFoundException("Kategorie nicht gefunden")
-        call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
+        val parentId = hub.category.parentId
+        if (parentId != null) {
+            call.respondRedirect("/category/$parentId/${hub.category.id}", permanent = true)
+        } else {
+            call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
+        }
     }
 
     get("/sitemap.xml") {
         val urls = CategoryService.indexableCategories().joinToString("\n") {
-            "  <url><loc>$BASE_URL/category/${it.id}</loc></url>"
+            "  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>"
         }
         val xml = """
             <?xml version="1.0" encoding="UTF-8"?>

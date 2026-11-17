@@ -8,6 +8,8 @@ import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.search.productCard
 import kotlinx.html.*
 
+private const val BASE_URL = "https://halalapp.de"
+
 fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
     title = "${hub.category.name} – HalalApp",
     isAdmin = isAdmin,
@@ -16,12 +18,16 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
             name = "robots"
             content = if (hub.indexable) "index, follow" else "noindex, follow"
         }
+        link {
+            rel = "canonical"
+            href = "$BASE_URL${hub.path}"
+        }
     },
     titleBlock = {
         hub.parent?.let { parent ->
-            a(classes = "text-sm text-primary-200 hover:underline") {
+            a(classes = "inline-flex min-h-10 items-center text-base text-primary-100 underline-offset-2 hover:underline") {
                 href = "/category/${parent.id}"
-                +parent.name
+                +"← ${parent.name}"
             }
         }
         h1 { +hub.category.name }
@@ -34,11 +40,12 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
     }
 
     if (hub.children.isNotEmpty()) {
-        div(classes = "flex flex-wrap gap-2") {
+        div(classes = "grid grid-cols-1 gap-2 sm:grid-cols-2") {
             hub.children.forEach { child ->
-                a(classes = "rounded-full bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50") {
-                    href = "/category/${child.id}"
-                    +child.name
+                a(classes = "flex min-h-[52px] items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-base font-medium text-gray-800 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                    href = "${hub.path}/${child.id}"
+                    span { +child.name }
+                    span(classes = "text-gray-400") { +"→" }
                 }
             }
         }
@@ -46,35 +53,41 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
 
     if (hub.products.isEmpty()) {
         card {
-            p(classes = "text-sm text-gray-600") {
+            p(classes = "text-base text-gray-600") {
                 +"In dieser Kategorie sind noch keine Produkte vorhanden."
             }
         }
     } else {
-        div(classes = "flex flex-col gap-6") {
+        div(classes = "flex flex-col gap-4") {
             hub.products.forEach { productCard(it) }
         }
 
         if (hub.totalPages > 1) {
-            div(classes = "flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 mt-6 rounded-lg shadow-sm") {
-                if (hub.page > 1) {
-                    a(classes = "text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2") {
-                        href = "/category/${hub.category.id}?page=${hub.page - 1}"
-                        +"« Zurück"
+            div(classes = "mt-6 flex flex-col gap-2") {
+                div(classes = "grid grid-cols-2 gap-2") {
+                    if (hub.page > 1) {
+                        a(classes = "flex min-h-[48px] items-center justify-center rounded-xl bg-white px-4 py-3 text-base font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                            href = "${hub.path}?page=${hub.page - 1}"
+                            +"« Zurück"
+                        }
+                    } else {
+                        span(classes = "flex min-h-[48px] items-center justify-center rounded-xl bg-gray-100 px-4 py-3 text-base font-semibold text-gray-400") {
+                            +"« Zurück"
+                        }
                     }
-                } else {
-                    span(classes = "text-sm text-gray-400 px-3 py-2") { +"« Zurück" }
+                    if (hub.page < hub.totalPages) {
+                        a(classes = "flex min-h-[48px] items-center justify-center rounded-xl bg-white px-4 py-3 text-base font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                            href = "${hub.path}?page=${hub.page + 1}"
+                            +"Weiter »"
+                        }
+                    } else {
+                        span(classes = "flex min-h-[48px] items-center justify-center rounded-xl bg-gray-100 px-4 py-3 text-base font-semibold text-gray-400") {
+                            +"Weiter »"
+                        }
+                    }
                 }
-                span(classes = "text-sm text-gray-700") {
+                p(classes = "text-center text-sm text-gray-600") {
                     +"Seite ${hub.page} von ${hub.totalPages}"
-                }
-                if (hub.page < hub.totalPages) {
-                    a(classes = "text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2") {
-                        href = "/category/${hub.category.id}?page=${hub.page + 1}"
-                        +"Weiter »"
-                    }
-                } else {
-                    span(classes = "text-sm text-gray-400 px-3 py-2") { +"Weiter »" }
                 }
             }
         }
@@ -88,25 +101,26 @@ fun HTML.categoriesPage(
     title = "Kategorien – HalalApp",
     isAdmin = isAdmin,
 ) {
-    card {
-        h1(classes = "text-lg font-bold text-gray-900 mb-3") { +"Kategorien" }
+    div(classes = "flex flex-col gap-3") {
+        h1(classes = "text-lg font-bold text-gray-900") { +"Kategorien" }
         if (categories.isEmpty()) {
-            p(classes = "text-sm text-gray-600") { +"Noch keine Kategorien vorhanden." }
+            card {
+                p(classes = "text-base text-gray-600") { +"Noch keine Kategorien vorhanden." }
+            }
         } else {
-            div(classes = "flex flex-col gap-4") {
-                categories.forEach { (top, children) ->
-                    div {
-                        a(classes = "text-base font-semibold text-indigo-600 hover:underline") {
-                            href = "/category/${top.id}"
-                            +top.name
-                        }
-                        if (children.isNotEmpty()) {
-                            div(classes = "mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600") {
-                                children.forEach { child ->
-                                    a(classes = "hover:text-indigo-600 hover:underline") {
-                                        href = "/category/${child.id}"
-                                        +child.name
-                                    }
+            categories.forEach { (top, children) ->
+                div(classes = "overflow-hidden rounded-xl bg-white shadow-sm") {
+                    a(classes = "flex min-h-[56px] items-center justify-between gap-3 px-4 py-4 text-base font-semibold text-indigo-700 transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                        href = "/category/${top.id}"
+                        span { +top.name }
+                        span(classes = "text-gray-400") { +"→" }
+                    }
+                    if (children.isNotEmpty()) {
+                        div(classes = "grid grid-cols-1 gap-1 border-t border-gray-100 p-2 sm:grid-cols-2") {
+                            children.forEach { child ->
+                                a(classes = "flex min-h-[46px] items-center rounded-lg px-3 py-2 text-base text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                                    href = "/category/${top.id}/${child.id}"
+                                    +child.name
                                 }
                             }
                         }

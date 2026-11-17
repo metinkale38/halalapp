@@ -18,6 +18,7 @@ data class CategoryHub(
     val page: Int,
     val totalPages: Int,
     val indexable: Boolean,
+    val path: String,
 )
 
 object CategoryService {
@@ -51,8 +52,12 @@ object CategoryService {
             page = page,
             totalPages = totalPages,
             indexable = totalCount > 0 && category.description.isNotBlank(),
+            path = categoryPath(category),
         )
     }
+
+    fun categoryPath(category: Category): String =
+        category.parentId?.let { "/category/$it/${category.id}" } ?: "/category/${category.id}"
 
     fun topLevelWithChildren(): List<Pair<Category, List<Category>>> = transaction {
         CategoriesTable.topLevel().map { category ->
