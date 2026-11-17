@@ -7,6 +7,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 object ProductsOffTable : ProductsTable("products_off") {
     val categoriesHierarchy = array("categories_hierarchy", TextColumnType())
+    val categoryId = text("category_id").nullable()
 
     fun exists(id: String): Boolean = transaction {
         selectAll().where { ProductsOffTable.id eq id }.limit(1).any()

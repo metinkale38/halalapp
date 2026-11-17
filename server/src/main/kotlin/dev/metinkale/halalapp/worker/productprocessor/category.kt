@@ -18,4 +18,15 @@ object CategoryResolver {
         }
         return OTHER
     }
+
+    fun resolveForProduct(
+        categoriesHierarchy: List<String>,
+        tags: List<String>,
+        ingredientCount: Int,
+    ): String? {
+        if (ingredientCount == 1) return null
+        if ("meat" in tags || "alcoholic_beverage" in tags) return null
+        if ("en:non-food-products" in categoriesHierarchy) return null
+        return resolve(categoriesHierarchy)
+    }
 }

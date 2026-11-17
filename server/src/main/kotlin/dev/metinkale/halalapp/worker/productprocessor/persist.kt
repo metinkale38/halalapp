@@ -2,17 +2,25 @@ package dev.metinkale.halalapp.worker.productprocessor
 
 import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
+import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import java.time.Instant
 
 fun ProductProcessorWorker.persist(products: List<Product>) {
+    if (products.isEmpty()) return
     val now = Instant.now()
 
     ProcessedProductsTable.deleteWhere { ProcessedProductsTable.id inList products.map { it.id } }
 
-    ProcessedProductsTable.batchInsert(products) {
+    val visible = products.filter { product ->
+        product.status.none { it == Status.INCOMPLETE || it == Status.UNKNOWN }
+    }
+
+    if (visible.isEmpty()) return
+
+    ProcessedProductsTable.batchInsert(visible) {
         this[ProcessedProductsTable.id] = it.id
         this[ProcessedProductsTable.brand] = it.brand
         this[ProcessedProductsTable.name] = it.name

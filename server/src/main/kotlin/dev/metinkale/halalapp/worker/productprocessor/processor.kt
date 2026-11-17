@@ -22,11 +22,13 @@ fun process(sources: List<SourceProduct>): List<Product> = transaction {
 }
 
 private fun Product.withCategory(source: SourceProduct): Product {
-    val categoryId = when {
-        source.ingredients.size == 1 -> null
-        source.source == ProductSource.CUSTOM -> source.customCategoryId ?: CategoryResolver.OTHER
-        "en:non-food-products" in source.categoriesHierarchy -> null
-        else -> CategoryResolver.resolve(source.categoriesHierarchy)
+    val categoryId = when (source.source) {
+        ProductSource.CUSTOM -> source.customCategoryId ?: CategoryResolver.OTHER
+        ProductSource.OFF -> CategoryResolver.resolveForProduct(
+            source.categoriesHierarchy,
+            source.tags,
+            source.ingredients.size,
+        )
     }
     return copy(categoryId = categoryId)
 }
