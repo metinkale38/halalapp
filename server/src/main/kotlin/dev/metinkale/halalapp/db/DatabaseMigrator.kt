@@ -22,7 +22,6 @@ object DatabaseMigrator {
         if (migrations.isEmpty()) return
 
         transaction {
-            exec("CREATE TABLE IF NOT EXISTS metadata (key text PRIMARY KEY, value text NOT NULL)")
             exec("SELECT pg_advisory_xact_lock(hashtext('$LOCK_KEY')::bigint)")
 
             val current = MetadataTable.getValue(VERSION_KEY)?.toIntOrNull() ?: 0

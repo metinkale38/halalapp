@@ -1,1 +1,14 @@
-DROP VIEW IF EXISTS products;
+DO $$
+DECLARE
+    owned boolean;
+BEGIN
+    SELECT c.relowner = (SELECT oid FROM pg_roles WHERE rolname = current_user)
+    INTO owned
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = current_schema() AND c.relname = 'products' AND c.relkind = 'v';
+
+    IF owned IS TRUE THEN
+        DROP VIEW products;
+    END IF;
+END $$;
