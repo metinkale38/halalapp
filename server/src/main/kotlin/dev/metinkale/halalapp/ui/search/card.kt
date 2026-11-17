@@ -13,7 +13,7 @@ fun FlowContent.productCard(product: Product) {
     a(href = "/product/${product.id}") {
         card(
             "flex flex-row w-full !p-0 overflow-hidden items-stretch ${
-                if (hasInsights) "ring-2 ring-indigo-200" else ""
+                if (hasInsights) "ring-1 ring-indigo-100" else ""
             }".trim()
         ) {
             img(classes = "h-24 w-24 object-cover flex-shrink-0") {
@@ -27,17 +27,8 @@ fun FlowContent.productCard(product: Product) {
                     +product.brand.ifBlank { "Unbekannt" }
                 }
                 div(classes = "flex flex-wrap items-center gap-1.5") {
-                    if (hasInsights) {
-                        span(classes = "inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700") {
-                            +when (product.confidence) {
-                                Confidence.MANUFACTURER -> "Herstellerinfo"
-                                Confidence.VERIFIED -> "Verifiziert"
-                                Confidence.INGREDIENTS -> "Laut Zutatenliste"
-                            }
-                        }
-                    }
                     product.status.forEach { status -> statusBadgeComponent(status) }
-                    if (!hasInsights) {
+                    if (product.confidence == Confidence.INGREDIENTS) {
                         statusBadgeComponent("Laut Zutatenliste", Status.INCOMPLETE)
                     }
                 }
