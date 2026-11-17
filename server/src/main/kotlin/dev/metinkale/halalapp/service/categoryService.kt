@@ -153,7 +153,8 @@ object CategoryService {
     }
 
     private fun scopeFilter(): Op<Boolean> =
-        not(stringLiteral("meat") eq anyFrom(ProcessedProductsTable.tags)) and
+        ProcessedProductsTable.filter and
+                not(stringLiteral("meat") eq anyFrom(ProcessedProductsTable.tags)) and
                 not(stringLiteral("alcoholic_beverage") eq anyFrom(ProcessedProductsTable.tags))
 }
 
