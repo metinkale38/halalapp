@@ -24,6 +24,12 @@ object ProductProcessorWorker {
             val processedProducts = process(products)
             persist(processedProducts)
             logger.info("Updated ${processedProducts.size} products")
+            val distribution = processedProducts
+                .groupingBy { it.categoryId ?: "null" }
+                .eachCount()
+                .entries
+                .sortedByDescending { it.value }
+            logger.info("Category distribution: $distribution")
         }
     }
 

@@ -2,15 +2,18 @@ package dev.metinkale.halalapp.worker.productprocessor
 
 import dev.metinkale.halalapp.db.entity.OTHER_CATEGORY_ID
 import dev.metinkale.halalapp.db.table.CategoryMappingTable
+import org.slf4j.LoggerFactory
 
 object CategoryResolver {
     const val OTHER = OTHER_CATEGORY_ID
+    private val logger = LoggerFactory.getLogger("CATEGORY_MAPPING")
 
     @Volatile
     private var mapping: Map<String, String> = emptyMap()
 
     fun reload() {
         mapping = CategoryMappingTable.allMappings()
+        logger.info("Loaded ${mapping.size} category mappings")
     }
 
     fun resolve(categoriesHierarchy: List<String>): String {

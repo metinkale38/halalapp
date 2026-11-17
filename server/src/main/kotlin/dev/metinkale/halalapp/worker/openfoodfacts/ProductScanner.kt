@@ -109,9 +109,10 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                             if (p.categories_tags.any { it in alcohol }) tags.add("alcoholic_beverage")
                             if (p.categories_tags.any { it in meat }) tags.add("meat")
 
+                            val categories = p.categories_hierarchy.ifEmpty { p.categories_tags }
                             val components = p.ingredients.flatMap { map(it) }
                             val categoryId = CategoryResolver.resolveForProduct(
-                                p.categories_hierarchy,
+                                categories,
                                 tags,
                                 components.size,
                             )
@@ -132,7 +133,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                             this[ProductTable_OFF.traces] = p.traces_tags
                             this[ProductTable_OFF.images] = ProductImages(frontImages)
                             this[ProductTable_OFF.tags] = tags
-                            this[ProductTable_OFF.categoriesHierarchy] = p.categories_hierarchy
+                            this[ProductTable_OFF.categoriesHierarchy] = categories
                             this[ProductTable_OFF.categoryId] = categoryId
                             this[ProductTable_OFF.lastSeen] = now
                         }
