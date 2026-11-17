@@ -28,7 +28,16 @@ fun FlowContent.productCard(product: Product, insightDate: LocalDate? = null) {
                         statusBadgeComponent("Laut Zutatenliste", Status.INCOMPLETE)
                     }
                 }
-                div(classes = "text-base font-medium text-gray-900 leading-snug truncate") { +(product.name) }
+                div("flex items-center justify-between gap-2") {
+                    div(classes = "min-w-0 flex-1 truncate text-base font-medium text-gray-900 leading-snug") {
+                        +(product.name)
+                    }
+                    insightDate?.let { date ->
+                        div(classes = "shrink-0 whitespace-nowrap text-right text-xs text-gray-500") {
+                            +"Herstellerinfo vom ${date.day.toString().padStart(2, '0')}.${(date.month.ordinal + 1).toString().padStart(2, '0')}.${date.year}"
+                        }
+                    }
+                }
             }
         }
     }
