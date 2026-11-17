@@ -1,6 +1,7 @@
 package dev.metinkale.halalapp.routes
 
 import dev.metinkale.halalapp.domain.Status
+import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.server.isAdmin
 import dev.metinkale.halalapp.service.CategoryService
 import dev.metinkale.halalapp.ui.category.categoriesPage
@@ -21,11 +22,13 @@ private const val PAGE_SIZE = 24
 
 fun Routing.categoryRoutes() {
     get("/categories") {
+        call.requireCategoriesVisible()
         val stats = CategoryService.statistics()
         call.respondHtml { categoriesPage(CategoryService.topLevelWithChildren(), stats, call.isAdmin()) }
     }
 
     get("/category/{parent}/{child}") {
+        call.requireCategoriesVisible()
         val parentId = call.parameters["parent"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val childId = call.parameters["child"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
@@ -41,6 +44,7 @@ fun Routing.categoryRoutes() {
     }
 
     get("/category/{id}") {
+        call.requireCategoriesVisible()
         val id = call.parameters["id"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val hub = CategoryService.hub(
@@ -60,17 +64,25 @@ fun Routing.categoryRoutes() {
         }
     }
 
-    get("/sitemap.xml") {
-        val urls = CategoryService.indexableCategories().joinToString("\n") {
-            "  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>"
+    if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS) {
+        get("/sitemap.xml") {
+            val urls = CategoryService.indexableCategories().joinToString("\n") {
+                "  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>"
+            }
+            val xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+                $urls
+                </urlset>
+            """.trimIndent()
+            call.respondText(xml, ContentType.Application.Xml)
         }
-        val xml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-            $urls
-            </urlset>
-        """.trimIndent()
-        call.respondText(xml, ContentType.Application.Xml)
+    }
+}
+
+private fun ApplicationCall.requireCategoriesVisible() {
+    if (!FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS && !isAdmin()) {
+        throw NotFoundException("Kategorie nicht gefunden")
     }
 }
 

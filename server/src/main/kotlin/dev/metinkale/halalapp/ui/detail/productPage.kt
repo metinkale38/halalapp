@@ -8,6 +8,7 @@ import dev.metinkale.halalapp.db.entity.Ingredient
 import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
+import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.service.CategoryService
 import dev.metinkale.halalapp.html.*
 import dev.metinkale.halalapp.ui.component.card
@@ -24,7 +25,9 @@ fun HTML.productPage(product: Product, isAdmin: Boolean = false) = template(
     product.brand + " " + product.name + " - HalalApp",
     isAdmin = isAdmin,
     titleBlock = {
-        productCategoryLinks(product.categoryId)
+        if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS || isAdmin) {
+            productCategoryLinks(product.categoryId)
+        }
         span(classes = "text-lg font-semibold uppercase text-primary-100") {
             +(product.brand.ifBlank { "Unbekannte Marke" })
         }

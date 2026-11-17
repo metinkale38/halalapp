@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.ui.category
 import dev.metinkale.halalapp.db.entity.Category
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.service.CategoryHub
+import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.service.CategoryService
 import dev.metinkale.halalapp.service.CategoryStats
 import dev.metinkale.halalapp.ui.component.card
@@ -27,7 +28,7 @@ fun HTML.categoryHubPage(
     head = {
         meta {
             name = "robots"
-            content = if (hub.indexable) "index, follow" else "noindex, follow"
+            content = if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS && hub.indexable) "index, follow" else "noindex, follow"
         }
         link {
             rel = "canonical"
@@ -160,6 +161,14 @@ fun HTML.categoriesPage(
     title = "Kategorien – HalalApp",
     description = "Alle Kategorien im HalalApp-Halal-Check: Produkte nach Zutaten und Status durchsuchen.",
     isAdmin = isAdmin,
+    head = {
+        if (!FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS) {
+            meta {
+                name = "robots"
+                content = "noindex, follow"
+            }
+        }
+    },
     titleBlock = {
         h1 { +"Kategorien" }
     },
