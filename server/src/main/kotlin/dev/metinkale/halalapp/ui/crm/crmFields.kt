@@ -2,6 +2,8 @@ package dev.metinkale.halalapp.ui.crm
 
 import dev.metinkale.halalapp.ui.crm.CrmLens.*
 import dev.metinkale.halalapp.db.entity.Entity
+import dev.metinkale.halalapp.db.table.CategoryMappingTable
+import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.CrmTable
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.IngredientsTable
@@ -9,7 +11,7 @@ import dev.metinkale.halalapp.db.table.ProductInsightsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.domain.Status
 
-fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any>> {
+fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any?>> {
     return when (this) {
         ClassificationsTable -> listOf(
             StaticText("ID", "id", ClassificationsTable.idRaw),
@@ -69,6 +71,33 @@ fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any>> {
         ProductParentTable -> listOf(
             Text("Barcode-Hauptprodukt", "parent_id", ProductParentTable.parentId),
             Text("Barcode-Dublette", "child_id", ProductParentTable.childId)
+        )
+
+        CategoriesTable -> listOf(
+            StaticText("ID / Slug", "id", CategoriesTable.idRaw),
+            Text("Name", "name", CategoriesTable.name),
+            Select<String?>(
+                "Überkategorie",
+                "parent_id",
+                listOf("" to "— keine (Top-Level) —") +
+                        CategoriesTable.allOrdered().filter { it.parentId == null }.map { it.id to it.name },
+                CategoriesTable.parentId,
+                { this[CategoriesTable.parentId].orEmpty() },
+                { this[CategoriesTable.parentId] = it.ifBlank { null } },
+            ),
+            Markdown("Beschreibung", "description", CategoriesTable.description),
+        )
+
+        CategoryMappingTable -> listOf(
+            StaticText("OFF-Kategorie", "id", CategoryMappingTable.idRaw),
+            Select(
+                "Kategorie",
+                "category_id",
+                CategoriesTable.allOrdered().map { it.id to it.name },
+                CategoryMappingTable.categoryId,
+                { this[CategoryMappingTable.categoryId] },
+                { this[CategoryMappingTable.categoryId] = it },
+            ),
         )
 
 

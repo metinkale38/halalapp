@@ -17,6 +17,7 @@ fun JdbcTransaction.markProductsForReprocessing(crmTable: CrmTable<*>, json: Map
         IngredientsTable -> json["id"]?.takeIf { it.isNotBlank() }?.let { markIngredientProducts(it) }
         ProductInsightsTable -> json["product_id"]?.takeIf { it.isNotBlank() }?.let { markProductForReprocessing(it) }
         ProductParentTable -> json["child_id"]?.takeIf { it.isNotBlank() }?.let { markProductForReprocessing(it) }
+        CategoriesTable, CategoryMappingTable -> Unit
     }
 }
 
@@ -33,7 +34,11 @@ private fun JdbcTransaction.markIngredientProducts(ingredientId: String) {
         SET last_updated = ?
         WHERE id IN (
             SELECT p.id
-            FROM products p
+            FROM (
+                SELECT id, ingredients, allergens, traces FROM products_off
+                UNION ALL
+                SELECT id, ingredients, allergens, traces FROM products_custom
+            ) p
             WHERE EXISTS (
                 SELECT 1
                 FROM jsonb_array_elements(p.ingredients) AS ingredient
@@ -59,7 +64,11 @@ private fun JdbcTransaction.markClassificationProducts(classificationId: String)
         SET last_updated = ?
         WHERE id IN (
             SELECT p.id
-            FROM products p
+            FROM (
+                SELECT id, ingredients, allergens, traces, tags FROM products_off
+                UNION ALL
+                SELECT id, ingredients, allergens, traces, tags FROM products_custom
+            ) p
             WHERE ?::text = ANY(p.tags)
             OR EXISTS (
                 SELECT 1

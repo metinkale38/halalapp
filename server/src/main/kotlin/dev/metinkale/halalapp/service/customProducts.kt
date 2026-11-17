@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.service
 import dev.metinkale.halalapp.db.entity.CustomProductProposal
 import dev.metinkale.halalapp.db.entity.ProductComponent
 import dev.metinkale.halalapp.db.entity.ProductImages
+import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.ProductImagesTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
@@ -40,6 +41,7 @@ data class CustomProductSubmission(
     val note: String,
     val creator: String,
     val front: UploadedImageInput?,
+    val categoryId: String? = null,
 )
 
 data class CustomProductEdit(
@@ -49,6 +51,7 @@ data class CustomProductEdit(
     val front: UploadedImageInput?,
     val removeFront: Boolean,
     val editor: String,
+    val categoryId: String? = null,
 )
 
 object CustomProductService {
@@ -67,6 +70,7 @@ object CustomProductService {
         val content = input.insightContent.trim().also { require(it.isNotBlank()) { "Produktinformation ist erforderlich." } }
         val animal = sanitizeClassifications(input.animal, animal = true)
         val alcohol = sanitizeClassifications(input.alcohol, animal = false)
+        val categoryId = sanitizeCategory(input.categoryId)
 
         require(!ProductsOffTable.exists(barcode)) {
             "Dieses Produkt existiert bereits bei OpenFoodFacts. Bitte reiche stattdessen eine Produktinformation über die Produktseite ein."
@@ -92,6 +96,7 @@ object CustomProductService {
                 put("insightDate", input.insightDate.toString())
                 put("animal", animal.joinToString(";"))
                 put("alcohol", alcohol.joinToString(";"))
+                categoryId?.let { put("categoryId", it) }
                 image?.let { put("frontImage", it) }
             }
 
@@ -130,6 +135,7 @@ object CustomProductService {
                 status = proposal.status,
                 date = proposal.date,
                 imageDataUri = json["frontImage"],
+                categoryId = json["categoryId"]?.takeIf { it.isNotBlank() },
             )
         }
     }
@@ -171,6 +177,7 @@ object CustomProductService {
                 it[ProductsCustomTable.tags] = emptyList()
                 it[ProductsCustomTable.traces] = emptyList()
                 it[ProductsCustomTable.allergens] = emptyList()
+                it[ProductsCustomTable.categoryId] = sanitizeCategory(json["categoryId"])
             }
 
             ProductInsightsTable.insert {
@@ -210,6 +217,7 @@ object CustomProductService {
         val name = input.name.trim().also { require(it.isNotBlank()) { "Produktname ist erforderlich." } }
         val brand = input.brand.trim().also { require(it.isNotBlank()) { "Marke ist erforderlich." } }
         val upload = input.front?.let { ProductImageService.process(it.bytes, it.mime) }
+        val categoryId = sanitizeCategory(input.categoryId)
 
         transaction {
             val existingRow = ProductsCustomTable.selectAll().where { ProductsCustomTable.id eq barcode }
@@ -218,6 +226,7 @@ object CustomProductService {
                 "id" to barcode,
                 "name" to existingRow[ProductsCustomTable.name],
                 "brand" to existingRow[ProductsCustomTable.brand],
+                "categoryId" to existingRow[ProductsCustomTable.categoryId].orEmpty(),
             )
 
             val newImages: ProductImages? = when {
@@ -238,13 +247,19 @@ object CustomProductService {
             ProductsCustomTable.update({ ProductsCustomTable.id eq barcode }) {
                 it[ProductsCustomTable.name] = name
                 it[ProductsCustomTable.brand] = brand
+                it[ProductsCustomTable.categoryId] = categoryId
                 newImages?.let { images -> it[ProductsCustomTable.images] = images }
             }
 
             ProposalsTable.recordDirectChange(
                 entityType = CUSTOM_PRODUCT_ENTITY,
                 oldValues = oldValues,
-                newValues = mapOf("id" to barcode, "name" to name, "brand" to brand),
+                newValues = mapOf(
+                    "id" to barcode,
+                    "name" to name,
+                    "brand" to brand,
+                    "categoryId" to categoryId.orEmpty(),
+                ),
                 creator = input.editor,
                 note = "Direkte Admin-Änderung",
             )
@@ -261,6 +276,15 @@ object CustomProductService {
 
     fun classificationNames(ids: List<String>): List<String> =
         ids.mapNotNull { ClassificationsTable.findById(it)?.name }
+
+    fun categoryOptions(): List<Pair<String, String>> =
+        CategoriesTable.allOrdered().map { it.id to it.name }
+
+    fun categoryNames(): Map<String, String> =
+        CategoriesTable.allOrdered().associate { it.id to it.name }
+
+    private fun sanitizeCategory(id: String?): String? =
+        id?.takeIf { it.isNotBlank() }?.takeIf { CategoriesTable.findById(it) != null }
 
     private fun sanitizeClassifications(ids: List<String>, animal: Boolean): List<String> =
         ids.distinct().filter { id ->

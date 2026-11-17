@@ -78,6 +78,11 @@ fun HTML.indexPage(isAdmin: Boolean = false) = template(
                 style = "display: none;"
                 +"Auf dem Smartphone installieren"
             }
+
+            a(classes = "w-full btn-secondary text-center") {
+                href = "/kategorien"
+                +"Kategorien durchstöbern"
+            }
         }
     }
 

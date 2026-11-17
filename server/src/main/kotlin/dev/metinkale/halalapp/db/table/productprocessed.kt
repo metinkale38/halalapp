@@ -26,6 +26,7 @@ object ProcessedProductsTable : EntityTable<Product>("products_processed") {
     val tags = array("tags", TextColumnType())
     val status = array("status", TextColumnType())
     val confidence = enumerationByName<Confidence>("confidence", 16)
+    val categoryId = text("category_id").nullable()
     val lastUpdated = timestamp("last_updated")
 
     override val filter: Op<Boolean> = stringLiteral("HALAL") eq anyFrom(status) or
@@ -49,7 +50,8 @@ object ProcessedProductsTable : EntityTable<Product>("products_processed") {
             alcoholIngredients = row[alcoholIngredients],
             unknownIngredients = row[unknownIngredients],
             status = row[status].map { Status.valueOf(it) },
-            confidence = row[confidence]
+            confidence = row[confidence],
+            categoryId = row[categoryId],
         )
     }
 

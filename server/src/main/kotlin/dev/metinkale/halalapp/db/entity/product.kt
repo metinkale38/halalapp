@@ -20,6 +20,7 @@ data class Product(
     val unknownIngredients: List<Ingredient>,
     val status: List<Status>,
     val confidence: Confidence,
+    val categoryId: String? = null,
 ) : Entity
 
 @Serializable

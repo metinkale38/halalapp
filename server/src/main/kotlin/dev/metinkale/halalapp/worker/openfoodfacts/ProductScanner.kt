@@ -7,6 +7,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.batchUpsert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -16,6 +17,7 @@ import java.util.zip.GZIPInputStream
 
 private object ProductTable_OFF : ProductsTable("products_off") {
     val lastSeen = timestamp("last_seen")
+    val categoriesHierarchy = array("categories_hierarchy", TextColumnType())
 }
 
 

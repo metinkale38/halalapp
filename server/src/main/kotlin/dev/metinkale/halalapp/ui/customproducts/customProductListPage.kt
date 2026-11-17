@@ -5,7 +5,10 @@ import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.template
 import kotlinx.html.*
 
-fun HTML.customProductListPage(products: List<CustomProduct>) = template(
+fun HTML.customProductListPage(
+    products: List<CustomProduct>,
+    categoryNames: Map<String, String> = emptyMap(),
+) = template(
     "Bestehende Custom-Produkte - HalalApp",
     titleBlock = {
         h2 { +"Custom-Produkte" }
@@ -52,6 +55,12 @@ fun HTML.customProductListPage(products: List<CustomProduct>) = template(
                         }
                         p(classes = "text-sm font-semibold text-gray-900 truncate") { +product.name }
                         p(classes = "text-xs text-gray-500 truncate") { +product.id }
+                        p(classes = "text-xs text-indigo-600 truncate") {
+                            +(
+                                product.categoryId?.let { categoryNames[it] ?: it }
+                                    ?: "Keine Kategorie"
+                                )
+                        }
                     }
                     div(classes = "flex flex-col gap-1") {
                         a(classes = "text-sm font-semibold text-indigo-600 hover:underline") {

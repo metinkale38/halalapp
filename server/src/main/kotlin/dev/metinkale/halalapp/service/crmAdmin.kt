@@ -1,12 +1,16 @@
 package dev.metinkale.halalapp.service
 
 import dev.metinkale.halalapp.db.entity.Entity
+import dev.metinkale.halalapp.db.table.CategoryMappingTable
+import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.CrmTable
 import dev.metinkale.halalapp.db.table.IngredientsTable
+import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
-import dev.metinkale.halalapp.db.table.ProductsTable
+import dev.metinkale.halalapp.db.table.ProductsCustomTable
+import dev.metinkale.halalapp.db.table.ProductsOffTable
 import dev.metinkale.halalapp.db.table.ProposalsTable
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.db.table.markProductsForReprocessing
@@ -86,7 +90,15 @@ object CrmAdminService {
         } else ""
         val from = """
             FROM product_parent pp
-            LEFT JOIN products p ON p.id = pp.parent_id
+            LEFT JOIN (
+                SELECT DISTINCT ON (id) id, name
+                FROM (
+                    SELECT id, name, 0 AS source_priority FROM products_custom
+                    UNION ALL
+                    SELECT id, name, 1 AS source_priority FROM products_off
+                ) src
+                ORDER BY id, source_priority
+            ) p ON p.id = pp.parent_id
             $filter
             GROUP BY pp.parent_id, p.name
         """.trimIndent()
@@ -206,6 +218,33 @@ object CrmAdminService {
                     errors += "Das Hauptprodukt existiert nicht."
                 }
             }
+
+            CategoriesTable -> {
+                required("id", "ID")
+                required("name", "Name")
+                val parentId = values["parent_id"].orEmpty()
+                if (parentId.isNotBlank()) {
+                    if (parentId == values["id"]) {
+                        errors += "Eine Kategorie kann nicht ihre eigene Überkategorie sein."
+                    } else {
+                        val parent = CategoriesTable.findById(parentId)
+                        if (parent == null) {
+                            errors += "Die Überkategorie existiert nicht."
+                        } else if (parent.parentId != null) {
+                            errors += "Es sind nur zwei Kategorie-Ebenen erlaubt."
+                        }
+                    }
+                }
+            }
+
+            CategoryMappingTable -> {
+                required("id", "OFF-Kategorie")
+                required("category_id", "Kategorie")
+                val categoryId = values["category_id"].orEmpty()
+                if (categoryId.isNotBlank() && CategoriesTable.findById(categoryId) == null) {
+                    errors += "Die ausgewählte Kategorie existiert nicht."
+                }
+            }
         }
 
         table.getCrmFields().forEach { field ->
@@ -318,11 +357,24 @@ object CrmAdminService {
                 ?.let { "Änderungen betreffen das Produkt $it." }
 
             ProductParentTable -> "Änderungen betreffen die Barcode-Verknüpfung dieser Dublette."
+
+            CategoriesTable -> {
+                val id = values["id"].orEmpty()
+                val count = if (id.isBlank()) 0 else {
+                    ProcessedProductsTable.selectAll()
+                        .where { ProcessedProductsTable.categoryId eq id }.count().toInt()
+                }
+                "$count Produkte sind dieser Kategorie zugeordnet."
+            }
+
+            CategoryMappingTable ->
+                "Änderungen greifen beim nächsten Reprocessing der betroffenen Produkte."
         }
     }
 
     private fun productExists(id: String): Boolean = transaction {
-        ProductsTable.selectAll().where { ProductsTable.id eq id }.limit(1).any()
+        ProductsOffTable.selectAll().where { ProductsOffTable.id eq id }.limit(1).any() ||
+                ProductsCustomTable.selectAll().where { ProductsCustomTable.id eq id }.limit(1).any()
     }
 
     private fun lower(expression: Expression<String>): CustomFunction<String> =
@@ -349,6 +401,14 @@ object CrmAdminService {
             ProductParentTable ->
                 (lower(ProductParentTable.idRaw) like needle) or
                         (lower(ProductParentTable.parentId) like needle)
+
+            CategoriesTable ->
+                (lower(CategoriesTable.idRaw) like needle) or
+                        (lower(CategoriesTable.name) like needle)
+
+            CategoryMappingTable ->
+                (lower(CategoryMappingTable.idRaw) like needle) or
+                        (lower(CategoryMappingTable.categoryId) like needle)
         }
     }
 }

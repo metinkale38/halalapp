@@ -65,6 +65,7 @@ fun Routing.customProductRoutes() {
                         data = CustomProductFormData(barcode = barcode),
                         animalOptions = CustomProductService.classificationOptions(animal = true),
                         alcoholOptions = CustomProductService.classificationOptions(animal = false),
+                        categoryOptions = CustomProductService.categoryOptions(),
                     )
                 }
             }
@@ -86,6 +87,7 @@ fun Routing.customProductRoutes() {
                         note = form.first("note"),
                         creator = call.userIdentity(),
                         front = form.files["front"],
+                        categoryId = form.first("categoryId"),
                     )
                 )
                 call.respondHtml {
@@ -108,6 +110,7 @@ fun Routing.customProductRoutes() {
                         data = form.toFormData(),
                         animalOptions = CustomProductService.classificationOptions(animal = true),
                         alcoholOptions = CustomProductService.classificationOptions(animal = false),
+                        categoryOptions = CustomProductService.categoryOptions(),
                         error = e.message,
                     )
                 }
@@ -128,7 +131,7 @@ fun Routing.customProductRoutes() {
             get("/manage") {
                 ensureAdmin()
                 call.respondHtml {
-                    customProductListPage(ProductsCustomTable.allProducts())
+                    customProductListPage(ProductsCustomTable.allProducts(), CustomProductService.categoryNames())
                 }
             }
 
@@ -153,9 +156,11 @@ fun Routing.customProductRoutes() {
                             barcode = product.id,
                             name = product.name,
                             brand = product.brand,
+                            categoryId = product.categoryId.orEmpty(),
                         ),
                         animalOptions = CustomProductService.classificationOptions(animal = true),
                         alcoholOptions = CustomProductService.classificationOptions(animal = false),
+                        categoryOptions = CustomProductService.categoryOptions(),
                         editing = true,
                         existingFrontUrl = front,
                     )
@@ -175,6 +180,7 @@ fun Routing.customProductRoutes() {
                             front = form.files["front"],
                             removeFront = form.first("removeFront") == "true",
                             editor = call.userIdentity(),
+                            categoryId = form.first("categoryId"),
                         )
                     )
                     call.respondRedirect("/crm/products_custom")
@@ -186,9 +192,11 @@ fun Routing.customProductRoutes() {
                                 barcode = id,
                                 name = form.first("name").ifBlank { product?.name.orEmpty() },
                                 brand = form.first("brand").ifBlank { product?.brand.orEmpty() },
+                                categoryId = form.first("categoryId"),
                             ),
                             animalOptions = CustomProductService.classificationOptions(animal = true),
                             alcoholOptions = CustomProductService.classificationOptions(animal = false),
+                            categoryOptions = CustomProductService.categoryOptions(),
                             editing = true,
                             error = e.message,
                         )
@@ -268,6 +276,7 @@ private fun ParsedProductForm.toFormData() = CustomProductFormData(
     animal = first("animal"),
     alcohol = first("alcohol"),
     note = first("note"),
+    categoryId = first("categoryId"),
 )
 
 private fun ApplicationCall.userIdentity(): String {

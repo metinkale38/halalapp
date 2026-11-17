@@ -20,5 +20,6 @@ object DatabaseFactory {
         }
         Database.connect(HikariDataSource(config))
 
+        DatabaseMigrator.migrate()
     }
 }
