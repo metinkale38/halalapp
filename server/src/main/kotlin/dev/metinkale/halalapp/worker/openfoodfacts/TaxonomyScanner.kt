@@ -9,14 +9,7 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 
 @Serializable
 private data class Entry(
-    val name: Map<String, String>,
-    val vegan: EnValue? = null,
-    val vegetarian: EnValue? = null,
-)
-
-@Serializable
-private data class EnValue(
-    val en: String,
+    val name: Map<String, String> = emptyMap(),
 )
 
 

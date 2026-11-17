@@ -64,7 +64,7 @@ object OpenFoodFactsWorker {
             nextTimestampStart?.let { MetadataTable.setValue("LAST_OFF_INCREMENTAL_IMPORT", it) }
         }
 
-        if (MetadataTable.getValue("LAST_TAXONOMY_IMPORT") == null) {
+        if (needsFullSync || MetadataTable.getValue("LAST_TAXONOMY_IMPORT") == null) {
             importIngredientTaxonomies("https://static.openfoodfacts.org/data/taxonomies/ingredients.json")
             importIngredientTaxonomies("https://static.openfoodfacts.org/data/taxonomies/allergens.json")
             MetadataTable.setValue("LAST_TAXONOMY_IMPORT", Instant.now().toString())

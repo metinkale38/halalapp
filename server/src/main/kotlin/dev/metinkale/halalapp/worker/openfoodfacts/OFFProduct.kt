@@ -1,6 +1,7 @@
 package dev.metinkale.halalapp.worker.openfoodfacts
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class OFFProduct(
@@ -49,7 +50,7 @@ data class OFFProduct(
 
     @Serializable
     data class Image(
-        val rev: Int,
+        val rev: JsonElement,
         val sizes: Map<String, Size>,
     )
 

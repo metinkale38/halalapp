@@ -8,6 +8,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.batchUpsert
@@ -76,6 +77,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                     val lang =
                                         listOf("de", "en", langs.keys.first()).firstOrNull { langs.containsKey(it) }
                                     val image = langs[lang]!!
+                                    val revision = image.rev.jsonPrimitive.content
                                     val padded = p.code.padStart(13, '0')
                                     val p1 = padded.substring(0, 3)
                                     val p2 = padded.substring(3, 6)
@@ -83,7 +85,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                     val p4 = padded.substring(9, 13)
 
                                     image.sizes.entries.associate { (k, v) ->
-                                        val filename = "front_${lang}.${image.rev}.${k}"
+                                        val filename = "front_${lang}.${revision}.${k}"
                                         val url =
                                             "https://images.openfoodfacts.org/images/products/$p1/$p2/$p3/$p4/$filename.jpg"
                                         v.w to url
