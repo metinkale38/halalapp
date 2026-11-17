@@ -185,9 +185,11 @@ fun HTML.categoriesPage(
     title = "Kategorien – HalalApp",
     description = "Alle Kategorien im HalalApp-Halal-Check: Produkte nach Zutaten und Status durchsuchen.",
     isAdmin = isAdmin,
+    titleBlock = {
+        h1 { +"Kategorien" }
+    },
 ) {
     div(classes = "flex flex-col gap-3") {
-        h1(classes = "text-lg font-bold text-gray-900") { +"Kategorien" }
         if (categories.isEmpty()) {
             card {
                 p(classes = "text-base text-gray-600") { +"Noch keine Kategorien vorhanden." }
