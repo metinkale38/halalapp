@@ -4,7 +4,6 @@ import dev.metinkale.halalapp.db.entity.Category
 import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
-import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.core.statements.StatementType
@@ -43,22 +42,17 @@ data class CategoryHub(
     val totalPages: Int,
     val indexable: Boolean,
     val path: String,
-    val confidence: Confidence?,
     val status: Set<Status>,
 ) {
     val isNavigation: Boolean get() = children.isNotEmpty()
 
     fun url(
-        confidence: Confidence? = this.confidence,
         status: Set<Status> = this.status,
         page: Int = this.page,
     ): String = buildString {
         append(path)
         val params = mutableListOf<String>()
         if (page > 1) params += "page=$page"
-        if (confidence != null && confidence != Confidence.MANUFACTURER) {
-            params += "confidence=${confidence.name.lowercase()}"
-        }
         if (status != CategoryService.defaultStatus) {
             status.forEach { params += "status=${it.name.lowercase()}" }
         }
@@ -78,7 +72,6 @@ object CategoryService {
         id: String,
         requestedPage: Int,
         pageSize: Int,
-        confidence: Confidence = Confidence.MANUFACTURER,
         status: Set<Status> = defaultStatus,
     ): CategoryHub? = transaction {
         val category = CategoriesTable.findById(id) ?: return@transaction null
@@ -95,43 +88,30 @@ object CategoryService {
                 totalCount = 0,
                 page = 1,
                 totalPages = 1,
-                indexable = requestedPage == 1 && status == defaultStatus && confidence != Confidence.INGREDIENTS,
+                indexable = requestedPage == 1 && status == defaultStatus,
                 path = path,
-                confidence = confidence,
                 status = status,
             )
         }
 
-        fun buildQuery(queryConfidence: Confidence) = ProcessedProductsTable
+        val query = ProcessedProductsTable
             .selectAll()
             .where {
-                val allowedConfidence = when (queryConfidence) {
-                    Confidence.INGREDIENTS -> listOf(Confidence.INGREDIENTS, Confidence.MANUFACTURER, Confidence.VERIFIED)
-                    Confidence.MANUFACTURER -> listOf(Confidence.MANUFACTURER, Confidence.VERIFIED)
-                    Confidence.VERIFIED -> listOf(Confidence.VERIFIED)
-                }
                 (ProcessedProductsTable.categoryId eq category.id) and
                         scopeFilter() and
-                        (ProcessedProductsTable.confidence eq anyFrom(arrayParam(allowedConfidence.map { it.name }))) and
                         StatusAllInArray(ProcessedProductsTable.status, arrayParam(status.map { it.name }))
             }
 
-        var effectiveConfidence: Confidence? = confidence
-        var query = buildQuery(confidence)
-        var totalCount = query.count().toInt()
-
-        if (totalCount == 0 && confidence == Confidence.MANUFACTURER) {
-            effectiveConfidence = null
-            query = buildQuery(Confidence.INGREDIENTS)
-            totalCount = query.count().toInt()
-        }
-
+        val totalCount = query.count().toInt()
         val totalPages = if (totalCount == 0) 1 else ceil(totalCount.toDouble() / pageSize).toInt()
         val page = requestedPage.coerceIn(1, totalPages)
         val offset = ((page - 1) * pageSize).toLong()
 
         val products = query
-            .orderBy(ProcessedProductsTable.name to SortOrder.ASC)
+            .orderBy(
+                ProcessedProductsTable.confidence to SortOrder.DESC,
+                ProcessedProductsTable.name to SortOrder.ASC,
+            )
             .limit(pageSize)
             .offset(offset)
             .map { ProcessedProductsTable.map(it) }
@@ -144,10 +124,8 @@ object CategoryService {
             totalCount = totalCount,
             page = page,
             totalPages = totalPages,
-            indexable = page == 1 && status == defaultStatus &&
-                    effectiveConfidence != Confidence.INGREDIENTS && totalCount > 0,
+            indexable = page == 1 && status == defaultStatus && totalCount > 0,
             path = path,
-            confidence = effectiveConfidence,
             status = status,
         )
     }

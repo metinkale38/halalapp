@@ -1,6 +1,5 @@
 package dev.metinkale.halalapp.routes
 
-import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.server.isAdmin
 import dev.metinkale.halalapp.service.CategoryService
@@ -34,7 +33,6 @@ fun Routing.categoryRoutes() {
             id = childId,
             requestedPage = page,
             pageSize = PAGE_SIZE,
-            confidence = call.categoryConfidence(),
             status = call.categoryStatus(),
         ) ?: throw NotFoundException("Kategorie nicht gefunden")
         if (hub.category.parentId != parentId) throw NotFoundException("Kategorie nicht gefunden")
@@ -49,7 +47,6 @@ fun Routing.categoryRoutes() {
             id = id,
             requestedPage = page,
             pageSize = PAGE_SIZE,
-            confidence = call.categoryConfidence(),
             status = call.categoryStatus(),
         ) ?: throw NotFoundException("Kategorie nicht gefunden")
         val parentId = hub.category.parentId
@@ -76,11 +73,6 @@ fun Routing.categoryRoutes() {
         call.respondText(xml, ContentType.Application.Xml)
     }
 }
-
-private fun ApplicationCall.categoryConfidence(): Confidence =
-    request.queryParameters["confidence"]
-        ?.let { runCatching { Confidence.valueOf(it.uppercase()) }.getOrNull() }
-        ?: Confidence.MANUFACTURER
 
 private fun ApplicationCall.categoryStatus(): Set<Status> =
     request.queryParameters.getAll("status")

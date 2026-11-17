@@ -1,7 +1,6 @@
 package dev.metinkale.halalapp.ui.category
 
 import dev.metinkale.halalapp.db.entity.Category
-import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.service.CategoryHub
 import dev.metinkale.halalapp.service.CategoryService
@@ -82,30 +81,6 @@ fun HTML.categoryHubPage(
     }
 
     div(classes = "flex flex-col gap-3") {
-        div(classes = "grid grid-cols-2 gap-2") {
-            listOf(
-                Confidence.MANUFACTURER to "Mit Produktinformationen",
-                Confidence.INGREDIENTS to "Alle Produkte",
-            ).forEach { (confidence, text) ->
-                val active = hub.confidence == confidence ||
-                        (hub.confidence == null && confidence == Confidence.INGREDIENTS)
-                if (active) {
-                    button(classes = "min-h-[44px] rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm") {
-                        +text
-                    }
-                } else {
-                    button(
-                        classes = "min-h-[44px] rounded-xl bg-gray-100 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white active:bg-gray-200 ${
-                            if (hub.confidence == null) "pointer-events-none opacity-50" else ""
-                        }".trim()
-                    ) {
-                        onClick = "swapUrl('${hub.url(confidence = confidence)}')"
-                        +text
-                    }
-                }
-            }
-        }
-
         div(classes = "flex flex-wrap gap-2") {
             Status.entries.forEach { status ->
                 if (status == Status.INCOMPLETE || status == Status.UNKNOWN) return@forEach
@@ -133,7 +108,7 @@ fun HTML.categoryHubPage(
             p(classes = "text-base text-gray-600") {
                 +"Keine Produkte für diese Filter gefunden."
             }
-            if (hub.status != CategoryService.defaultStatus || hub.confidence == Confidence.INGREDIENTS) {
+            if (hub.status != CategoryService.defaultStatus) {
                 a(classes = "mt-3 inline-block text-sm font-semibold text-indigo-600 hover:underline") {
                     href = hub.path
                     +"Filter zurücksetzen"
