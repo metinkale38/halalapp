@@ -171,14 +171,20 @@ fun HTML.categoriesPage(
             }
         } else {
             categories.forEach { (top, children) ->
+                val hasChildren = children.isNotEmpty()
                 div(classes = "overflow-hidden rounded-xl bg-white shadow-sm") {
-                    a(classes = "flex min-h-[56px] items-center justify-between gap-3 px-4 py-4 text-base font-semibold text-indigo-700 transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                    a(
+                        classes = if (hasChildren)
+                            "block px-4 pt-4 pb-1 text-base font-semibold text-gray-900 transition-colors hover:text-indigo-700"
+                        else
+                            "flex min-h-[56px] items-center justify-between px-4 py-4 text-base font-semibold text-gray-900 transition-colors hover:text-indigo-700"
+                    ) {
                         href = "/category/${top.id}"
                         span { +top.name }
-                        span(classes = "text-gray-400") { +"→" }
+                        if (!hasChildren) span(classes = "text-gray-400") { +"→" }
                     }
-                    if (children.isNotEmpty()) {
-                        div(classes = "grid grid-cols-1 gap-1 border-t border-gray-100 p-2 sm:grid-cols-2") {
+                    if (hasChildren) {
+                        div(classes = "grid grid-cols-1 gap-1 p-2 sm:grid-cols-2") {
                             children.forEach { child ->
                                 a(classes = "flex min-h-[46px] items-center rounded-lg px-3 py-2 text-base text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100") {
                                     href = "/category/${top.id}/${child.id}"
