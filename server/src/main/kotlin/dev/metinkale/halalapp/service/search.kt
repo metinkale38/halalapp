@@ -70,7 +70,8 @@ object SearchService {
             page = searchQuery.page,
             pageSize = searchQuery.pageSize,
             confidence = searchQuery.confidence,
-            status = searchQuery.status
+            status = searchQuery.status,
+            insightDates = ProductInsightsService.latestDates(items.map { it.id }),
         )
     }
 
