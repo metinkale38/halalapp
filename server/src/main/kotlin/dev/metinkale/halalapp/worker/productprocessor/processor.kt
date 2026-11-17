@@ -25,7 +25,7 @@ fun process(sources: List<SourceProduct>): List<Product> = transaction {
 private fun Product.withCategory(source: SourceProduct): Product {
     val categoryId = when {
         source.source == ProductSource.CUSTOM -> source.customCategoryId ?: CategoryResolver.OTHER
-        status.contains(Status.INCOMPLETE) || status.contains(Status.UNKNOWN) -> null
+        status.contains(Status.INCOMPLETE) -> null
         else -> CategoryResolver.resolveForProduct(
             source.categoriesHierarchy,
             source.tags,
