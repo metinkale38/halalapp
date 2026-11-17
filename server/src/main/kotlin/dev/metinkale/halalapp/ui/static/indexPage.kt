@@ -1,10 +1,12 @@
 package dev.metinkale.halalapp.ui.static
 
+import dev.metinkale.halalapp.service.InsightProduct
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.flarum.FlarumResponse
 import dev.metinkale.halalapp.ui.component.flarum.renderFlarumFeed
 import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.ui.component.template
+import dev.metinkale.halalapp.ui.search.productCard
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -35,7 +37,7 @@ private val forumCache = flow {
     }
 }.stateIn(CoroutineScope(Dispatchers.IO + SupervisorJob()), started = kotlinx.coroutines.flow.SharingStarted.Eagerly, initialValue = null)
 
-fun HTML.indexPage(isAdmin: Boolean = false) = template(
+fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolean = false) = template(
     title = "HalalApp – Dein smarter Begleiter im Supermarkt",
     head = {
         script { src = "/pwa.js" }
@@ -85,6 +87,30 @@ fun HTML.indexPage(isAdmin: Boolean = false) = template(
                     href = "/categories"
                     +"Kategorien durchstöbern"
                 }
+            }
+        }
+    }
+
+    if (insights.isNotEmpty()) {
+        div(classes = "flex flex-col gap-3") {
+            div(classes = "flex items-end justify-between gap-3") {
+                div {
+                    h4 { +"Neue Produktinformationen" }
+                    p(classes = "text-sm text-gray-600") {
+                        +"Zuletzt hinzugefügte Herstellerinformationen."
+                    }
+                }
+                a(classes = "whitespace-nowrap text-sm font-semibold text-primary hover:underline") {
+                    href = "/insights"
+                    +"Alle anzeigen"
+                }
+            }
+            insights.forEach { insight ->
+                productCard(insight.product, insight.date)
+            }
+            a(classes = "w-full btn-secondary text-center") {
+                href = "/insights"
+                +"Alle Produktinformationen anzeigen"
             }
         }
     }

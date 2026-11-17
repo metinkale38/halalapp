@@ -5,10 +5,11 @@ import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.statusBadgeComponent
+import kotlinx.datetime.LocalDate
 import kotlinx.html.*
 
 
-fun FlowContent.productCard(product: Product) {
+fun FlowContent.productCard(product: Product, insightDate: LocalDate? = null) {
     val hasInsights = product.confidence != Confidence.INGREDIENTS
     a(href = "/product/${product.id}") {
         card(
@@ -33,6 +34,11 @@ fun FlowContent.productCard(product: Product) {
                     }
                 }
                 div(classes = "text-base font-medium text-gray-900 leading-snug truncate") { +(product.name) }
+                insightDate?.let { date ->
+                    div(classes = "text-xs text-gray-500") {
+                        +"Herstellerinfo vom ${date.day.toString().padStart(2, '0')}.${(date.month.ordinal + 1).toString().padStart(2, '0')}.${date.year}"
+                    }
+                }
             }
         }
     }
