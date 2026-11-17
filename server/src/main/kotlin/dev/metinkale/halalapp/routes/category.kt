@@ -1,18 +1,24 @@
 package dev.metinkale.halalapp.routes
 
+import dev.metinkale.halalapp.domain.Confidence
+import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.server.isAdmin
 import dev.metinkale.halalapp.service.CategoryService
 import dev.metinkale.halalapp.ui.category.categoriesPage
 import dev.metinkale.halalapp.ui.category.categoryHubPage
 import io.ktor.http.ContentType
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.NotFoundException
+import io.ktor.server.request.queryString
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import kotlin.text.uppercase
 
 private const val BASE_URL = "https://halalapp.de"
+private const val PAGE_SIZE = 24
 
 fun Routing.categoryRoutes() {
     get("/categories") {
@@ -23,8 +29,13 @@ fun Routing.categoryRoutes() {
         val parentId = call.parameters["parent"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val childId = call.parameters["child"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val hub = CategoryService.hub(childId, page, 24)
-            ?: throw NotFoundException("Kategorie nicht gefunden")
+        val hub = CategoryService.hub(
+            id = childId,
+            requestedPage = page,
+            pageSize = PAGE_SIZE,
+            confidence = call.categoryConfidence(),
+            status = call.categoryStatus(),
+        ) ?: throw NotFoundException("Kategorie nicht gefunden")
         if (hub.category.parentId != parentId) throw NotFoundException("Kategorie nicht gefunden")
         call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
     }
@@ -32,11 +43,18 @@ fun Routing.categoryRoutes() {
     get("/category/{id}") {
         val id = call.parameters["id"] ?: throw NotFoundException("Kategorie nicht gefunden")
         val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val hub = CategoryService.hub(id, page, 24)
-            ?: throw NotFoundException("Kategorie nicht gefunden")
+        val hub = CategoryService.hub(
+            id = id,
+            requestedPage = page,
+            pageSize = PAGE_SIZE,
+            confidence = call.categoryConfidence(),
+            status = call.categoryStatus(),
+        ) ?: throw NotFoundException("Kategorie nicht gefunden")
         val parentId = hub.category.parentId
         if (parentId != null) {
-            call.respondRedirect("/category/$parentId/${hub.category.id}", permanent = true)
+            val query = call.request.queryString()
+            val target = "/category/$parentId/${hub.category.id}" + if (query.isBlank()) "" else "?$query"
+            call.respondRedirect(target, permanent = true)
         } else {
             call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
         }
@@ -55,3 +73,15 @@ fun Routing.categoryRoutes() {
         call.respondText(xml, ContentType.Application.Xml)
     }
 }
+
+private fun ApplicationCall.categoryConfidence(): Confidence =
+    request.queryParameters["confidence"]
+        ?.let { runCatching { Confidence.valueOf(it.uppercase()) }.getOrNull() }
+        ?: Confidence.MANUFACTURER
+
+private fun ApplicationCall.categoryStatus(): Set<Status> =
+    request.queryParameters.getAll("status")
+        ?.takeIf { it.isNotEmpty() }
+        ?.mapNotNull { runCatching { Status.valueOf(it.uppercase()) }.getOrNull() }
+        ?.toSet()
+        ?: CategoryService.defaultStatus

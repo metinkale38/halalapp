@@ -53,7 +53,7 @@ val <T : Entity> CrmTable<T>.listFieldNames: List<String>
         IngredientsTable -> listOf("id", "name", "classification")
         ProductInsightsTable -> listOf("product_id", "date", "animal", "alcohol")
         ProductParentTable -> listOf("parent_id", "parent_name", "child_ids")
-        CategoriesTable -> listOf("id", "name", "parent_id", "description")
+        CategoriesTable -> listOf("id", "name", "parent_id")
         CategoryMappingTable -> listOf("id", "category_id")
     }
 
@@ -63,7 +63,7 @@ val <T : Entity> CrmTable<T>.searchFieldNames: List<String>
         IngredientsTable -> listOf("id", "name", "classification")
         ProductInsightsTable -> listOf("id", "product_id", "content", "date", "animal", "alcohol")
         ProductParentTable -> listOf("parent_id", "parent_name", "child_ids")
-        CategoriesTable -> listOf("id", "name", "parent_id", "description")
+        CategoriesTable -> listOf("id", "name", "parent_id")
         CategoryMappingTable -> listOf("id", "category_id")
     }
 

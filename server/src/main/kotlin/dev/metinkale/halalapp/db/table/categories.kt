@@ -14,13 +14,11 @@ private val categoryOrder = compareBy<Category> { it.id == OTHER_CATEGORY_ID }.t
 object CategoriesTable : CrmTable<Category>("categories") {
     val name = text("name")
     val parentId = text("parent_id").nullable()
-    val description = text("description")
 
     override fun map(row: ResultRow) = Category(
         id = row[id].value,
         name = row[name],
         parentId = row[parentId],
-        description = row[description],
     )
 
     fun children(id: String): List<Category> = transaction {

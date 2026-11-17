@@ -4,6 +4,8 @@ import dev.metinkale.halalapp.db.entity.Category
 import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.CategoriesTable
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
+import dev.metinkale.halalapp.domain.Confidence
+import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -19,13 +21,43 @@ data class CategoryHub(
     val totalPages: Int,
     val indexable: Boolean,
     val path: String,
-)
+    val confidence: Confidence?,
+    val status: Set<Status>,
+) {
+    val isNavigation: Boolean get() = children.isNotEmpty()
+
+    fun url(
+        confidence: Confidence? = this.confidence,
+        status: Set<Status> = this.status,
+        page: Int = this.page,
+    ): String = buildString {
+        append(path)
+        val params = mutableListOf<String>()
+        if (page > 1) params += "page=$page"
+        if (confidence != null && confidence != Confidence.MANUFACTURER) {
+            params += "confidence=${confidence.name.lowercase()}"
+        }
+        if (status != CategoryService.defaultStatus) {
+            status.forEach { params += "status=${it.name.lowercase()}" }
+        }
+        if (params.isNotEmpty()) append("?").append(params.joinToString("&"))
+    }
+}
 
 object CategoryService {
-    fun hub(id: String, requestedPage: Int, pageSize: Int): CategoryHub? = transaction {
+    val defaultStatus: Set<Status> = setOf(Status.HALAL, Status.DOUBTFUL, Status.UNKNOWN, Status.HARAM)
+
+    fun hub(
+        id: String,
+        requestedPage: Int,
+        pageSize: Int,
+        confidence: Confidence = Confidence.MANUFACTURER,
+        status: Set<Status> = defaultStatus,
+    ): CategoryHub? = transaction {
         val category = CategoriesTable.findById(id) ?: return@transaction null
         val parent = category.parentId?.let { CategoriesTable.findById(it) }
         val children = CategoriesTable.children(id)
+        val path = categoryPath(category)
 
         if (children.isNotEmpty()) {
             return@transaction CategoryHub(
@@ -36,16 +68,37 @@ object CategoryService {
                 totalCount = 0,
                 page = 1,
                 totalPages = 1,
-                indexable = category.description.isNotBlank(),
-                path = categoryPath(category),
+                indexable = requestedPage == 1 && status == defaultStatus && confidence != Confidence.INGREDIENTS,
+                path = path,
+                confidence = confidence,
+                status = status,
             )
         }
 
-        val query = ProcessedProductsTable
+        fun buildQuery(queryConfidence: Confidence) = ProcessedProductsTable
             .selectAll()
-            .where { scopeFilter() and (ProcessedProductsTable.categoryId eq category.id) }
+            .where {
+                val allowedConfidence = when (queryConfidence) {
+                    Confidence.INGREDIENTS -> listOf(Confidence.INGREDIENTS, Confidence.MANUFACTURER, Confidence.VERIFIED)
+                    Confidence.MANUFACTURER -> listOf(Confidence.MANUFACTURER, Confidence.VERIFIED)
+                    Confidence.VERIFIED -> listOf(Confidence.VERIFIED)
+                }
+                (ProcessedProductsTable.categoryId eq category.id) and
+                        scopeFilter() and
+                        (ProcessedProductsTable.confidence eq anyFrom(arrayParam(allowedConfidence.map { it.name }))) and
+                        StatusAllInArray(ProcessedProductsTable.status, arrayParam(status.map { it.name }))
+            }
 
-        val totalCount = query.count().toInt()
+        var effectiveConfidence: Confidence? = confidence
+        var query = buildQuery(confidence)
+        var totalCount = query.count().toInt()
+
+        if (totalCount == 0 && confidence == Confidence.MANUFACTURER) {
+            effectiveConfidence = null
+            query = buildQuery(Confidence.INGREDIENTS)
+            totalCount = query.count().toInt()
+        }
+
         val totalPages = if (totalCount == 0) 1 else ceil(totalCount.toDouble() / pageSize).toInt()
         val page = requestedPage.coerceIn(1, totalPages)
         val offset = ((page - 1) * pageSize).toLong()
@@ -64,8 +117,11 @@ object CategoryService {
             totalCount = totalCount,
             page = page,
             totalPages = totalPages,
-            indexable = totalCount > 0 && category.description.isNotBlank(),
-            path = categoryPath(category),
+            indexable = page == 1 && status == defaultStatus &&
+                    effectiveConfidence != Confidence.INGREDIENTS && totalCount > 0,
+            path = path,
+            confidence = effectiveConfidence,
+            status = status,
         )
     }
 
@@ -80,22 +136,25 @@ object CategoryService {
 
     fun indexableCategories(): List<Category> = transaction {
         CategoriesTable.allOrdered().filter { category ->
-            category.description.isNotBlank() && countFor(category) > 0
+            CategoriesTable.children(category.id).isNotEmpty() || countFor(category) > 0
         }
     }
 
     private fun countFor(category: Category): Int = transaction {
-        val ids = listOf(category.id) + CategoriesTable.children(category.id).map { it.id }
         ProcessedProductsTable
             .selectAll()
-            .where { scopeFilter() and (ProcessedProductsTable.categoryId inList ids) }
+            .where {
+                (ProcessedProductsTable.categoryId eq category.id) and
+                        scopeFilter() and
+                        StatusAllInArray(ProcessedProductsTable.status, arrayParam(defaultStatus.map { it.name }))
+            }
             .count()
             .toInt()
     }
 
-    fun scopeFilter(): Op<Boolean> =
-        not(stringLiteral("INCOMPLETE") eq anyFrom(ProcessedProductsTable.status)) and
-                not(stringLiteral("UNKNOWN") eq anyFrom(ProcessedProductsTable.status)) and
-                not(stringLiteral("meat") eq anyFrom(ProcessedProductsTable.tags)) and
+    private fun scopeFilter(): Op<Boolean> =
+        not(stringLiteral("meat") eq anyFrom(ProcessedProductsTable.tags)) and
                 not(stringLiteral("alcoholic_beverage") eq anyFrom(ProcessedProductsTable.tags))
 }
+
+private class StatusAllInArray(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<@")

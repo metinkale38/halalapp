@@ -85,7 +85,6 @@ fun <T : Entity> CrmTable<T>.getCrmFields(): List<CrmLens<out Any?>> {
                 { this[CategoriesTable.parentId].orEmpty() },
                 { this[CategoriesTable.parentId] = it.ifBlank { null } },
             ),
-            Markdown("Beschreibung", "description", CategoriesTable.description),
         )
 
         CategoryMappingTable -> listOf(

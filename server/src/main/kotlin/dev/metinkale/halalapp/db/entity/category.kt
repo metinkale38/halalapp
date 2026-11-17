@@ -6,7 +6,6 @@ data class Category(
     override val id: String,
     val name: String,
     val parentId: String?,
-    val description: String,
 ) : Entity
 
 data class CategoryMapping(
