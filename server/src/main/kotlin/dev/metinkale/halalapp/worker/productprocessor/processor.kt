@@ -6,6 +6,7 @@ import dev.metinkale.halalapp.db.entity.ProductInsights
 import dev.metinkale.halalapp.db.table.ClassificationsTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
 import dev.metinkale.halalapp.domain.Confidence
+import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 private val unknownIngredient = ClassificationsTable.findById("unknown_ingredient")!!
@@ -22,9 +23,10 @@ fun process(sources: List<SourceProduct>): List<Product> = transaction {
 }
 
 private fun Product.withCategory(source: SourceProduct): Product {
-    val categoryId = when (source.source) {
-        ProductSource.CUSTOM -> source.customCategoryId ?: CategoryResolver.OTHER
-        ProductSource.OFF -> CategoryResolver.resolveForProduct(
+    val categoryId = when {
+        status.contains(Status.INCOMPLETE) || status.contains(Status.UNKNOWN) -> null
+        source.source == ProductSource.CUSTOM -> source.customCategoryId ?: CategoryResolver.OTHER
+        else -> CategoryResolver.resolveForProduct(
             source.categoriesHierarchy,
             source.tags,
             source.ingredients.size,
