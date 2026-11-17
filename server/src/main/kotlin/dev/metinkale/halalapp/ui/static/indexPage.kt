@@ -91,6 +91,10 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
         }
     }
 
+    forumCache.value?.let { feed ->
+        renderFlarumFeed(feed)
+    }
+
     if (insights.isNotEmpty()) {
         div(classes = "flex flex-col gap-3") {
             div(classes = "flex items-end justify-between gap-3") {
@@ -113,9 +117,5 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
                 +"Alle Produktinformationen anzeigen"
             }
         }
-    }
-
-    forumCache.value?.let { feed ->
-        renderFlarumFeed(feed)
     }
 }
