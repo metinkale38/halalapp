@@ -69,7 +69,7 @@ suspend fun OpenFoodFactsWorker.importProducts(url: String) {
                                                 it.product_name_en,
                                                 it.product_name
                                             ).any { it.isNotBlank() }
-                                }.filter { it.product_name_de?.isBlank() == true }
+                                }
                         ) { p ->
 
                             val frontImages: Map<Int, String> =
