@@ -241,8 +241,13 @@ object CrmAdminService {
                 required("id", "OFF-Kategorie")
                 required("category_id", "Kategorie")
                 val categoryId = values["category_id"].orEmpty()
-                if (categoryId.isNotBlank() && CategoriesTable.findById(categoryId) == null) {
-                    errors += "Die ausgewählte Kategorie existiert nicht."
+                if (categoryId.isNotBlank()) {
+                    val category = CategoriesTable.findById(categoryId)
+                    if (category == null) {
+                        errors += "Die ausgewählte Kategorie existiert nicht."
+                    } else if (CategoriesTable.children(category.id).isNotEmpty()) {
+                        errors += "Bitte eine Unterkategorie auswählen."
+                    }
                 }
             }
         }
