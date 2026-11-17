@@ -61,7 +61,12 @@ fun HTML.categoryHubPage(
                 a(classes = "block rounded-xl bg-white p-3 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
                     href = "${hub.path}/${child.id}"
                     div(classes = "flex flex-wrap items-start justify-between gap-x-4 gap-y-1") {
-                        h2(classes = "text-base font-semibold text-gray-900") { +child.name }
+                        div {
+                            h2(classes = "text-base font-semibold text-gray-900") { +child.name }
+                            div(classes = "text-xs text-gray-500") {
+                                +"${stats[child.id]?.total ?: 0} Produkte"
+                            }
+                        }
                         categoryStatsLine(stats[child.id])
                     }
                 }
