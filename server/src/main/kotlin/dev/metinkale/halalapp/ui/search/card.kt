@@ -13,7 +13,7 @@ fun FlowContent.productCard(product: Product) {
     a(href = "/product/${product.id}") {
         card(
             "flex flex-row w-full !p-0 overflow-hidden items-stretch ${
-                if (hasInsights) "ring-1 ring-gray-200" else ""
+                if (hasInsights) "ring-1 ring-gray-400" else ""
             }".trim()
         ) {
             img(classes = "h-24 w-24 object-cover flex-shrink-0") {

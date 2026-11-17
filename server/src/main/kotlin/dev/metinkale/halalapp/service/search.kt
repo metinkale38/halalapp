@@ -40,29 +40,23 @@ object SearchService {
         val offset = ((searchQuery.page - 1) * searchQuery.pageSize).toLong()
 
 
-        val allowedConfidence = when (searchQuery.confidence) {
-            Confidence.INGREDIENTS -> listOf(Confidence.INGREDIENTS, Confidence.MANUFACTURER, Confidence.VERIFIED)
-            Confidence.MANUFACTURER -> listOf(Confidence.MANUFACTURER, Confidence.VERIFIED)
-            Confidence.VERIFIED -> listOf(Confidence.VERIFIED)
-        }
         val allowedStatus = searchQuery.status
 
         val searchFilter = SearchFilter(searchQuery.query)
-        val confidenceFilter =
-            (ProcessedProductsTable.confidence eq anyFrom(arrayParam(allowedConfidence.map { it.name })))
         val statusFilter = AllInArray(ProcessedProductsTable.status, arrayParam(allowedStatus.map { it.name }))
         val brandFilter = ProcessedProductsTable.filter
 
         val query = ProcessedProductsTable
             .selectAll()
-            .where(searchFilter and confidenceFilter and statusFilter and brandFilter)
+            .where(searchFilter and statusFilter and brandFilter)
 
         val totalCount = query.count().toInt()
 
-        if (totalCount == 0 && searchQuery.confidence == Confidence.MANUFACTURER)
-            return@transaction search(searchQuery.copy(confidence = Confidence.INGREDIENTS)).copy(confidence = null)
-
         val items = query
+            .orderBy(
+                ProcessedProductsTable.confidence to SortOrder.DESC,
+                ProcessedProductsTable.name to SortOrder.ASC,
+            )
             .offset(offset)
             .limit(searchQuery.pageSize)
             .map { ProcessedProductsTable.map(it) }
