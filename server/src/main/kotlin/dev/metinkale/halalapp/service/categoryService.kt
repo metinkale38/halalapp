@@ -13,14 +13,23 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.math.ceil
 import java.time.Instant
 
-data class CategoryStats(val halal: Int, val doubtful: Int, val haram: Int) {
+data class CategoryStats(
+    val halal: Int,
+    val doubtful: Int,
+    val haram: Int,
+    val manufacturer: Int = 0,
+) {
     val total: Int get() = halal + doubtful + haram
 
-    operator fun plus(other: CategoryStats) =
-        CategoryStats(halal + other.halal, doubtful + other.doubtful, haram + other.haram)
+    operator fun plus(other: CategoryStats) = CategoryStats(
+        halal + other.halal,
+        doubtful + other.doubtful,
+        haram + other.haram,
+        manufacturer + other.manufacturer,
+    )
 
     companion object {
-        val ZERO = CategoryStats(0, 0, 0)
+        val ZERO = CategoryStats(0, 0, 0, 0)
     }
 }
 
@@ -158,7 +167,8 @@ object CategoryService {
             SELECT pp.category_id,
                    count(*) FILTER (WHERE 'HALAL' = ANY(pp.status)) AS halal,
                    count(*) FILTER (WHERE 'DOUBTFUL' = ANY(pp.status)) AS doubtful,
-                   count(*) FILTER (WHERE 'HARAM' = ANY(pp.status)) AS haram
+                   count(*) FILTER (WHERE 'HARAM' = ANY(pp.status)) AS haram,
+                   count(*) FILTER (WHERE pp.confidence IN ('MANUFACTURER', 'VERIFIED')) AS manufacturer
             FROM products_processed pp
             WHERE pp.category_id IS NOT NULL
               AND NOT ('meat' = ANY(pp.tags))
@@ -172,7 +182,12 @@ object CategoryService {
             explicitStatementType = StatementType.SELECT,
         ) { rs ->
             while (rs.next()) {
-                own[rs.getString(1)] = CategoryStats(rs.getInt(2), rs.getInt(3), rs.getInt(4))
+                own[rs.getString(1)] = CategoryStats(
+                    rs.getInt(2),
+                    rs.getInt(3),
+                    rs.getInt(4),
+                    rs.getInt(5),
+                )
             }
         }
 

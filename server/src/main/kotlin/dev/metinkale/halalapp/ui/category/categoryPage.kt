@@ -45,7 +45,7 @@ fun HTML.categoryHubPage(
         h1 { +hub.category.name }
         stats[hub.category.id]?.let { summary ->
             div(classes = "text-sm text-primary-100/90") {
-                +"${summary.halal} Halal · ${summary.doubtful} Zweifelhaft · ${summary.haram} Haram"
+                +"${summary.halal} Halal · ${summary.doubtful} Zweifelhaft · ${summary.haram} Haram · ${summary.manufacturer} Herstellerinformationen"
             }
         }
     },
@@ -206,11 +206,12 @@ private fun FlowContent.categoryStatsLine(stats: CategoryStats?) {
         span(classes = "text-xs text-gray-400") { +"Keine Produkte" }
         return
     }
-    div(classes = "flex flex-wrap items-center gap-x-2 text-xs text-gray-500") {
+    div(classes = "text-xs text-gray-500") {
         span(classes = "font-medium text-emerald-600") { +"${stats.halal} Halal" }
-        span { +"/" }
+        +" / "
         span(classes = "font-medium text-amber-600") { +"${stats.doubtful} Zweifelhaft" }
-        span { +"/" }
+        +" / "
         span(classes = "font-medium text-red-600") { +"${stats.haram} Haram" }
+        span(classes = "text-gray-400") { +" · ${stats.manufacturer} Herstellerinformationen" }
     }
 }
