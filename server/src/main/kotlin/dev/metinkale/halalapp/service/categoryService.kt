@@ -45,7 +45,7 @@ data class CategoryHub(
 }
 
 object CategoryService {
-    val defaultStatus: Set<Status> = setOf(Status.HALAL, Status.DOUBTFUL, Status.UNKNOWN, Status.HARAM)
+    val defaultStatus: Set<Status> = setOf(Status.HALAL, Status.DOUBTFUL, Status.HARAM)
 
     fun hub(
         id: String,

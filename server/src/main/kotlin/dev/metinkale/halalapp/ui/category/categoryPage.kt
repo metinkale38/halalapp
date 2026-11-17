@@ -86,7 +86,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
 
         div(classes = "flex flex-wrap gap-2") {
             Status.entries.forEach { status ->
-                if (status == Status.INCOMPLETE) return@forEach
+                if (status == Status.INCOMPLETE || status == Status.UNKNOWN) return@forEach
                 val active = hub.status.contains(status)
                 val target = if (active) hub.status - status else hub.status + status
                 button(
