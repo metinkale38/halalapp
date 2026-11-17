@@ -6,7 +6,7 @@ import dev.metinkale.halalapp.ui.component.flarum.FlarumResponse
 import dev.metinkale.halalapp.ui.component.flarum.renderFlarumFeed
 import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.ui.component.template
-import dev.metinkale.halalapp.ui.search.productCard
+import dev.metinkale.halalapp.ui.insights.insightPreviewCard
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -106,8 +106,10 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
                     +"Alle anzeigen"
                 }
             }
-            insights.forEach { insight ->
-                productCard(insight.product, insight.date)
+            div(classes = "grid grid-cols-2 gap-3 md:grid-cols-4") {
+                insights.forEach { insight ->
+                    insightPreviewCard(insight)
+                }
             }
             a(classes = "w-full btn-secondary text-center") {
                 href = "/insights"
