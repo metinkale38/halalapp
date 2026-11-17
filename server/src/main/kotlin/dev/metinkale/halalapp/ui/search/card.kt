@@ -30,7 +30,7 @@ fun FlowContent.productCard(product: Product, insightDate: LocalDate? = null) {
                 }
                 div(classes = "text-base font-medium text-gray-900 leading-snug truncate") { +(product.name) }
                 insightDate?.let { date ->
-                    div(classes = "text-xs text-gray-500") {
+                    div(classes = "mt-auto self-end whitespace-nowrap text-right text-xs text-gray-500") {
                         +"Herstellerinfo vom ${date.day.toString().padStart(2, '0')}.${(date.month.ordinal + 1).toString().padStart(2, '0')}.${date.year}"
                     }
                 }

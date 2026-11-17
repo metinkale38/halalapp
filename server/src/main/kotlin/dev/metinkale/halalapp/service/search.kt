@@ -4,6 +4,7 @@ import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -103,6 +104,7 @@ data class SearchResult(
     val totalPages: Int = if (totalCount == 0) 0 else ceil(totalCount.toDouble() / pageSize).toInt(),
     val confidence: Confidence?,
     val status: Set<Status>?,
+    val insightDates: Map<String, LocalDate> = emptyMap(),
 ) {
     val url
         get() = buildString {

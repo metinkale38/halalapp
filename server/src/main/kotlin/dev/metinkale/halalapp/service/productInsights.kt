@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.arrayParam
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.core.max
 import org.jetbrains.exposed.v1.jdbc.Query
@@ -57,6 +58,18 @@ data class InsightsPage(
 
 object ProductInsightsService {
     val defaultStatus: Set<Status> = setOf(Status.HALAL, Status.DOUBTFUL, Status.UNKNOWN, Status.HARAM)
+
+    fun latestDates(productIds: List<String>): Map<String, LocalDate> = transaction {
+        if (productIds.isEmpty()) return@transaction emptyMap()
+        val maxDate = ProductInsightsTable.date.max()
+        ProductInsightsTable
+            .select(ProductInsightsTable.product_id, maxDate)
+            .where { ProductInsightsTable.product_id inList productIds }
+            .groupBy(ProductInsightsTable.product_id)
+            .associate { row ->
+                row[ProductInsightsTable.product_id] to row[maxDate]!!.toKotlinLocalDate()
+            }
+    }
 
     fun preview(limit: Int = 3): List<InsightProduct> = transaction {
         val (query, latestDate) = insightsQuery("", defaultStatus)
