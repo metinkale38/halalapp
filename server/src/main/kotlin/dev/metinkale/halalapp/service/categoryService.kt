@@ -26,11 +26,24 @@ object CategoryService {
         val category = CategoriesTable.findById(id) ?: return@transaction null
         val parent = category.parentId?.let { CategoriesTable.findById(it) }
         val children = CategoriesTable.children(id)
-        val ids = listOf(category.id) + children.map { it.id }
+
+        if (children.isNotEmpty()) {
+            return@transaction CategoryHub(
+                category = category,
+                parent = parent,
+                children = children,
+                products = emptyList(),
+                totalCount = 0,
+                page = 1,
+                totalPages = 1,
+                indexable = category.description.isNotBlank(),
+                path = categoryPath(category),
+            )
+        }
 
         val query = ProcessedProductsTable
             .selectAll()
-            .where { scopeFilter() and (ProcessedProductsTable.categoryId inList ids) }
+            .where { scopeFilter() and (ProcessedProductsTable.categoryId eq category.id) }
 
         val totalCount = query.count().toInt()
         val totalPages = if (totalCount == 0) 1 else ceil(totalCount.toDouble() / pageSize).toInt()

@@ -49,9 +49,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
                 }
             }
         }
-    }
-
-    if (hub.products.isEmpty()) {
+    } else if (hub.products.isEmpty()) {
         card {
             p(classes = "text-base text-gray-600") {
                 +"In dieser Kategorie sind noch keine Produkte vorhanden."
