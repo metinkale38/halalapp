@@ -48,7 +48,7 @@ fun HTML.categoryHubPage(
                 div {
                     +"${summary.halal} Halal · ${summary.doubtful} Zweifelhaft · ${summary.haram} Haram"
                 }
-                div(classes = "text-right text-primary-100/70") {
+                div(classes = "text-primary-100/70") {
                     +"${summary.manufacturer} Herstellerinformationen"
                 }
             }
