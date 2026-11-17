@@ -26,9 +26,13 @@ suspend fun OpenFoodFactsWorker.importIngredientTaxonomies(url: String) {
     transaction {
         entries.entries.forEach { (key, value) ->
             val localizedName = value.name["de"] ?: value.name["en"] ?: key
-            IngredientsTable.upsert {
+            IngredientsTable.upsert(
+                IngredientsTable.id,
+                onUpdateExclude = listOf(IngredientsTable.classification),
+            ) {
                 it[id] = key
                 it[name] = localizedName
+                it[classification] = "unknown_ingredient"
             }
         }
     }
