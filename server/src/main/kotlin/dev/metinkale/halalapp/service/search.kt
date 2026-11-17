@@ -54,8 +54,8 @@ object SearchService {
 
         val items = query
             .orderBy(
-                statusRankExpression() to SortOrder.ASC,
                 ProcessedProductsTable.confidence to SortOrder.DESC,
+                statusRankExpression() to SortOrder.ASC,
                 ProcessedProductsTable.name to SortOrder.ASC,
             )
             .offset(offset)
