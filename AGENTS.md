@@ -16,6 +16,9 @@ Wichtige Pfade:
 - `server/src/main/resources/static/` – statische Assets (JS, CSS, Bibliotheken)
 - `.github/workflows/` – CI (Build, Deployment)
 
+Ausführliche Hinweise liegen unter `docs/agents/`. Diese Dateien nur lesen, wenn der
+jeweilige Bereich tatsächlich bearbeitet wird.
+
 ## Workflow
 
 1. Arbeite immer über einen eigenen Branch und einen Pull Request gegen `main`.
@@ -27,23 +30,28 @@ Wichtige Pfade:
 
 ## Deployment
 
-- **Test:** PR mit dem Label `deploy-test` versehen. Der Workflow deployt den
-  erfolgreichen Build dieses PRs auf den Testserver. Alternativ manuell über
-  `workflow_dispatch` mit PR-Nummer.
-- **Prod:** Ein erfolgreicher Build auf `main` deployt automatisch nach Prod.
-  Kein manueller Klick nötig; `workflow_dispatch` bleibt als Notfall-Fallback.
+Details: [`docs/agents/deployment.md`](docs/agents/deployment.md). Nur lesen, wenn
+Deployment- oder CI-Themen bearbeitet werden.
 
 ## Code-Analyse
 
-- Für die Analyse des Codes bevorzugt `repomix` verwenden, z. B.
-  `repomix --output repomix-output.xml`.
-- `repomix-output.xml` ist generiert und wird **nicht** eingecheckt (siehe `.gitignore`).
-- Gezielte Änderungen anschließend mit den normalen Lese-/Suchwerkzeugen verifizieren.
+Details: [`docs/agents/code-analysis.md`](docs/agents/code-analysis.md). Nur lesen,
+wenn eine größere Codeanalyse nötig ist.
+
+## Vorschläge einbinden
+
+Details: [`docs/agents/proposals.md`](docs/agents/proposals.md). Nur lesen, wenn
+Produktvorschläge eingereicht oder geprüft werden.
 
 ## Sicherheit
 
 - Dieses Projekt ist Open Source: **keine Secrets, Tokens, Passwörter oder
   Zugangsdaten** im Repository speichern.
+- Zugangsdaten niemals in `AGENTS.md`, Code, Commits oder Projektdateien
+  dokumentieren. Liegen sie nicht in der aktuellen Unterhaltung vor, den Nutzer
+  danach fragen.
+- Cookies und Sessions nur temporär außerhalb des Repositories halten und nicht
+  einchecken.
 - `local.properties`, `.env`-Dateien und ähnliche lokale Konfigurationen bleiben
   ungetrackt. Secrets gehören ausschließlich in GitHub Actions Secrets bzw. in die
   Serverumgebung.
