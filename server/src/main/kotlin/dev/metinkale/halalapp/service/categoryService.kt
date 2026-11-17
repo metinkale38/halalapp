@@ -7,9 +7,22 @@ import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.core.statements.StatementType
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.math.ceil
+import java.time.Instant
+
+data class CategoryStats(val halal: Int, val doubtful: Int, val haram: Int) {
+    val total: Int get() = halal + doubtful + haram
+
+    operator fun plus(other: CategoryStats) =
+        CategoryStats(halal + other.halal, doubtful + other.doubtful, haram + other.haram)
+
+    companion object {
+        val ZERO = CategoryStats(0, 0, 0)
+    }
+}
 
 data class CategoryHub(
     val category: Category,
@@ -46,6 +59,11 @@ data class CategoryHub(
 
 object CategoryService {
     val defaultStatus: Set<Status> = setOf(Status.HALAL, Status.DOUBTFUL, Status.HARAM)
+
+    private data class StatsSnapshot(val at: Instant, val stats: Map<String, CategoryStats>)
+
+    @Volatile
+    private var statsSnapshot: StatsSnapshot? = null
 
     fun hub(
         id: String,
@@ -123,6 +141,56 @@ object CategoryService {
             confidence = effectiveConfidence,
             status = status,
         )
+    }
+
+    fun statistics(): Map<String, CategoryStats> {
+        val now = Instant.now()
+        statsSnapshot?.takeIf { now.epochSecond - it.at.epochSecond < 60 }?.let { return it.stats }
+        val fresh = loadStatistics()
+        statsSnapshot = StatsSnapshot(now, fresh)
+        return fresh
+    }
+
+    private fun loadStatistics(): Map<String, CategoryStats> = transaction {
+        val own = HashMap<String, CategoryStats>()
+        exec(
+            """
+            SELECT pp.category_id,
+                   count(*) FILTER (WHERE 'HALAL' = ANY(pp.status)) AS halal,
+                   count(*) FILTER (WHERE 'DOUBTFUL' = ANY(pp.status)) AS doubtful,
+                   count(*) FILTER (WHERE 'HARAM' = ANY(pp.status)) AS haram
+            FROM products_processed pp
+            WHERE pp.category_id IS NOT NULL
+              AND NOT ('meat' = ANY(pp.tags))
+              AND NOT ('alcoholic_beverage' = ANY(pp.tags))
+              AND ( ('HALAL' = ANY(pp.status)) OR NOT EXISTS (
+                    SELECT 1 FROM brand_blacklist b
+                    WHERE unaccent(lower(b.brand)) = unaccent(lower(pp.brand))
+              ))
+            GROUP BY pp.category_id
+            """.trimIndent(),
+            explicitStatementType = StatementType.SELECT,
+        ) { rs ->
+            while (rs.next()) {
+                own[rs.getString(1)] = CategoryStats(rs.getInt(2), rs.getInt(3), rs.getInt(4))
+            }
+        }
+
+        val all = CategoriesTable.allOrdered()
+        val byParent = all.filter { it.parentId != null }.groupBy { it.parentId!! }
+        val result = HashMap<String, CategoryStats>()
+
+        fun resolve(id: String): CategoryStats {
+            result[id]?.let { return it }
+            val combined = (byParent[id] ?: emptyList()).fold(own[id] ?: CategoryStats.ZERO) { acc, child ->
+                acc + resolve(child.id)
+            }
+            result[id] = combined
+            return combined
+        }
+
+        all.forEach { resolve(it.id) }
+        result
     }
 
     fun categoryPath(category: Category): String =

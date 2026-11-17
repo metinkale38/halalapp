@@ -5,6 +5,7 @@ import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.service.CategoryHub
 import dev.metinkale.halalapp.service.CategoryService
+import dev.metinkale.halalapp.service.CategoryStats
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.search.productCard
@@ -12,7 +13,11 @@ import kotlinx.html.*
 
 private const val BASE_URL = "https://halalapp.de"
 
-fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
+fun HTML.categoryHubPage(
+    hub: CategoryHub,
+    stats: Map<String, CategoryStats>,
+    isAdmin: Boolean = false,
+) = template(
     title = "${hub.category.name} – HalalApp",
     description = if (hub.isNavigation) {
         "Kategorien und Produkte zu ${hub.category.name} im Halal-Check."
@@ -38,15 +43,22 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
             }
         }
         h1 { +hub.category.name }
+        stats[hub.category.id]?.let { summary ->
+            div(classes = "text-sm text-primary-100/90") {
+                +"${summary.halal} Halal · ${summary.doubtful} Zweifelhaft · ${summary.haram} Haram"
+            }
+        }
     },
 ) {
     if (hub.isNavigation) {
-        div(classes = "grid grid-cols-1 gap-2 sm:grid-cols-2") {
+        div(classes = "flex flex-col gap-2") {
             hub.children.forEach { child ->
-                a(classes = "flex min-h-[52px] items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-base font-medium text-gray-800 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                a(classes = "block rounded-xl bg-white p-3 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
                     href = "${hub.path}/${child.id}"
-                    span { +child.name }
-                    span(classes = "text-gray-400") { +"→" }
+                    div(classes = "flex flex-wrap items-start justify-between gap-x-4 gap-y-1") {
+                        h2(classes = "text-base font-semibold text-gray-900") { +child.name }
+                        categoryStatsLine(stats[child.id])
+                    }
                 }
             }
         }
@@ -157,6 +169,7 @@ fun HTML.categoryHubPage(hub: CategoryHub, isAdmin: Boolean = false) = template(
 
 fun HTML.categoriesPage(
     categories: List<Pair<Category, List<Category>>>,
+    stats: Map<String, CategoryStats>,
     isAdmin: Boolean = false,
 ) = template(
     title = "Kategorien – HalalApp",
@@ -171,30 +184,33 @@ fun HTML.categoriesPage(
             }
         } else {
             categories.forEach { (top, children) ->
-                val hasChildren = children.isNotEmpty()
-                div(classes = "overflow-hidden rounded-xl bg-white shadow-sm") {
-                    a(
-                        classes = if (hasChildren)
-                            "block px-4 pt-4 pb-1 text-base font-semibold text-gray-900 transition-colors hover:text-indigo-700"
-                        else
-                            "flex min-h-[56px] items-center justify-between px-4 py-4 text-base font-semibold text-gray-900 transition-colors hover:text-indigo-700"
-                    ) {
-                        href = "/category/${top.id}"
-                        span { +top.name }
-                        if (!hasChildren) span(classes = "text-gray-400") { +"→" }
+                a(classes = "block rounded-xl bg-white p-3 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
+                    href = "/category/${top.id}"
+                    div(classes = "flex flex-wrap items-start justify-between gap-x-4 gap-y-1") {
+                        h2(classes = "text-base font-semibold text-gray-900") { +top.name }
+                        categoryStatsLine(stats[top.id])
                     }
-                    if (hasChildren) {
-                        div(classes = "grid grid-cols-1 gap-1 p-2 sm:grid-cols-2") {
-                            children.forEach { child ->
-                                a(classes = "flex min-h-[46px] items-center rounded-lg px-3 py-2 text-base text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100") {
-                                    href = "/category/${top.id}/${child.id}"
-                                    +child.name
-                                }
-                            }
+                    if (children.isNotEmpty()) {
+                        p(classes = "mt-1 text-sm text-gray-500") {
+                            +children.joinToString(", ") { it.name }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+private fun FlowContent.categoryStatsLine(stats: CategoryStats?) {
+    if (stats == null || stats.total == 0) {
+        span(classes = "text-xs text-gray-400") { +"Keine Produkte" }
+        return
+    }
+    div(classes = "flex flex-wrap items-center gap-x-2 text-xs text-gray-500") {
+        span(classes = "font-medium text-emerald-600") { +"${stats.halal} Halal" }
+        span { +"/" }
+        span(classes = "font-medium text-amber-600") { +"${stats.doubtful} Zweifelhaft" }
+        span { +"/" }
+        span(classes = "font-medium text-red-600") { +"${stats.haram} Haram" }
     }
 }

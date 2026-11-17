@@ -22,7 +22,8 @@ private const val PAGE_SIZE = 24
 
 fun Routing.categoryRoutes() {
     get("/categories") {
-        call.respondHtml { categoriesPage(CategoryService.topLevelWithChildren(), call.isAdmin()) }
+        val stats = CategoryService.statistics()
+        call.respondHtml { categoriesPage(CategoryService.topLevelWithChildren(), stats, call.isAdmin()) }
     }
 
     get("/category/{parent}/{child}") {
@@ -37,7 +38,8 @@ fun Routing.categoryRoutes() {
             status = call.categoryStatus(),
         ) ?: throw NotFoundException("Kategorie nicht gefunden")
         if (hub.category.parentId != parentId) throw NotFoundException("Kategorie nicht gefunden")
-        call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
+        val stats = CategoryService.statistics()
+        call.respondHtml { categoryHubPage(hub, stats, call.isAdmin()) }
     }
 
     get("/category/{id}") {
@@ -56,7 +58,8 @@ fun Routing.categoryRoutes() {
             val target = "/category/$parentId/${hub.category.id}" + if (query.isBlank()) "" else "?$query"
             call.respondRedirect(target, permanent = true)
         } else {
-            call.respondHtml { categoryHubPage(hub, call.isAdmin()) }
+            val stats = CategoryService.statistics()
+            call.respondHtml { categoryHubPage(hub, stats, call.isAdmin()) }
         }
     }
 
