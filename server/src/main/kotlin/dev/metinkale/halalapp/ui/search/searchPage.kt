@@ -56,7 +56,7 @@ fun HTML.searchPage(entity: SearchResult, isAdmin: Boolean = false) = template(
         } else {
             div(classes = "flex flex-col gap-6") {
                 entity.items.forEach { product ->
-                    productCard(product)
+                    productCard(product, entity.insightDates[product.id])
                 }
             }
 

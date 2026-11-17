@@ -5,17 +5,13 @@ import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.statusBadgeComponent
+import kotlinx.datetime.LocalDate
 import kotlinx.html.*
 
 
-fun FlowContent.productCard(product: Product) {
-    val hasInsights = product.confidence != Confidence.INGREDIENTS
+fun FlowContent.productCard(product: Product, insightDate: LocalDate? = null) {
     a(href = "/product/${product.id}") {
-        card(
-            "flex flex-row w-full !p-0 overflow-hidden items-stretch ${
-                if (hasInsights) "ring-1 ring-gray-400" else ""
-            }".trim()
-        ) {
+        card("flex flex-row w-full !p-0 overflow-hidden items-stretch") {
             img(classes = "h-24 w-24 object-cover flex-shrink-0") {
                 attributes.put("referrerpolicy", "no-referrer")
                 loading = ImgLoading.lazy
@@ -32,7 +28,16 @@ fun FlowContent.productCard(product: Product) {
                         statusBadgeComponent("Laut Zutatenliste", Status.INCOMPLETE)
                     }
                 }
-                div(classes = "text-base font-medium text-gray-900 leading-snug truncate") { +(product.name) }
+                div("flex items-center justify-between gap-2") {
+                    div(classes = "min-w-0 flex-1 truncate text-base font-medium text-gray-900 leading-snug") {
+                        +(product.name)
+                    }
+                    insightDate?.let { date ->
+                        div(classes = "shrink-0 whitespace-nowrap text-right text-xs text-gray-500") {
+                            +"Herstellerinfo vom ${date.day.toString().padStart(2, '0')}.${(date.month.ordinal + 1).toString().padStart(2, '0')}.${date.year}"
+                        }
+                    }
+                }
             }
         }
     }
