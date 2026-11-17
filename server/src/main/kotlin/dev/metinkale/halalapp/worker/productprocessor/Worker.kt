@@ -20,6 +20,7 @@ object ProductProcessorWorker {
             IngredientsTable.cacheAll()
             CategoryResolver.reload()
             val products = load()
+            logger.info("Loaded ${products.size} products")
             val processedProducts = process(products)
             persist(processedProducts)
             logger.info("Updated ${processedProducts.size} products")

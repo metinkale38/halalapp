@@ -43,9 +43,10 @@ data class SourceProduct(
 )
 
 fun ProductProcessorWorker.load(): List<SourceProduct> {
-    val prioritizedProducts = loadPrioritizedProducts(10000)
-    val missingProducts = loadMissingProducts(10000)
-    val oldestProducts = loadOldestProcessedProducts(10000)
+    val limit = System.getenv("PROCESSOR_BATCH_SIZE")?.toIntOrNull()?.coerceAtLeast(1) ?: 10000
+    val prioritizedProducts = loadPrioritizedProducts(limit)
+    val missingProducts = loadMissingProducts(limit)
+    val oldestProducts = loadOldestProcessedProducts(limit)
     return prioritizedProducts + missingProducts + oldestProducts
 }
 
