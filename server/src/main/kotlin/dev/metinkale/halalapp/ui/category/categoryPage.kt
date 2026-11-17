@@ -48,7 +48,7 @@ fun HTML.categoryHubPage(
                 div {
                     +"${summary.halal} Halal · ${summary.doubtful} Zweifelhaft · ${summary.haram} Haram"
                 }
-                div(classes = "text-primary-100/70") {
+                div(classes = "text-right text-primary-100/70") {
                     +"${summary.manufacturer} Herstellerinformationen"
                 }
             }
@@ -204,6 +204,10 @@ fun HTML.categoriesPage(
                         p(classes = "mt-1 text-sm text-gray-500") {
                             +children.joinToString(", ") { it.name }
                         }
+                    } else {
+                        p(classes = "mt-1 text-sm text-gray-500") {
+                            +"\u00A0"
+                        }
                     }
                 }
             }
@@ -224,7 +228,7 @@ private fun FlowContent.categoryStatsLine(stats: CategoryStats?) {
             +" / "
             span(classes = "font-medium text-red-600") { +"${stats.haram} Haram" }
         }
-        div(classes = "text-gray-400") {
+        div(classes = "text-right text-gray-400") {
             +"${stats.manufacturer} Herstellerinformationen"
         }
     }
