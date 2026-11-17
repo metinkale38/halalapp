@@ -22,17 +22,6 @@ object DatabaseMigrator {
         if (migrations.isEmpty()) return
 
         transaction {
-            exec(
-                """
-                DO $$
-                BEGIN
-                    IF to_regclass('public.metadata') IS NULL THEN
-                        CREATE TABLE public.metadata (key text PRIMARY KEY, value text NOT NULL);
-                    END IF;
-                END $$;
-                """.trimIndent(),
-                explicitStatementType = StatementType.MULTI,
-            )
             exec("SELECT pg_advisory_xact_lock(hashtext('$LOCK_KEY')::bigint)")
 
             val current = MetadataTable.getValue(VERSION_KEY)?.toIntOrNull() ?: 0
