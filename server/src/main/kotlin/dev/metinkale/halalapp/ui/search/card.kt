@@ -10,13 +10,8 @@ import kotlinx.html.*
 
 
 fun FlowContent.productCard(product: Product, insightDate: LocalDate? = null) {
-    val hasInsights = product.confidence != Confidence.INGREDIENTS
     a(href = "/product/${product.id}") {
-        card(
-            "flex flex-row w-full !p-0 overflow-hidden items-stretch ${
-                if (hasInsights) "ring-1 ring-gray-400" else ""
-            }".trim()
-        ) {
+        card("flex flex-row w-full !p-0 overflow-hidden items-stretch") {
             img(classes = "h-24 w-24 object-cover flex-shrink-0") {
                 attributes.put("referrerpolicy", "no-referrer")
                 loading = ImgLoading.lazy
