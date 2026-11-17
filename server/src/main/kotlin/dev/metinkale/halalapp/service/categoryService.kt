@@ -17,6 +17,7 @@ data class CategoryStats(
     val doubtful: Int,
     val haram: Int,
     val manufacturer: Int = 0,
+    val products: Int = 0,
 ) {
     val total: Int get() = halal + doubtful + haram
 
@@ -25,10 +26,11 @@ data class CategoryStats(
         doubtful + other.doubtful,
         haram + other.haram,
         manufacturer + other.manufacturer,
+        products + other.products,
     )
 
     companion object {
-        val ZERO = CategoryStats(0, 0, 0, 0)
+        val ZERO = CategoryStats(0, 0, 0, 0, 0)
     }
 }
 
@@ -146,7 +148,8 @@ object CategoryService {
                    count(*) FILTER (WHERE 'HALAL' = ANY(pp.status)) AS halal,
                    count(*) FILTER (WHERE 'DOUBTFUL' = ANY(pp.status)) AS doubtful,
                    count(*) FILTER (WHERE 'HARAM' = ANY(pp.status)) AS haram,
-                   count(*) FILTER (WHERE pp.confidence IN ('MANUFACTURER', 'VERIFIED')) AS manufacturer
+                   count(*) FILTER (WHERE pp.confidence IN ('MANUFACTURER', 'VERIFIED')) AS manufacturer,
+                   count(*) AS products
             FROM products_processed pp
             WHERE pp.category_id IS NOT NULL
               AND NOT ('meat' = ANY(pp.tags))
@@ -165,6 +168,7 @@ object CategoryService {
                     rs.getInt(3),
                     rs.getInt(4),
                     rs.getInt(5),
+                    rs.getInt(6),
                 )
             }
         }
@@ -196,9 +200,7 @@ object CategoryService {
     }
 
     fun indexableCategories(): List<Category> = transaction {
-        CategoriesTable.allOrdered().filter { category ->
-            CategoriesTable.children(category.id).isNotEmpty() || countFor(category) > 0
-        }
+        CategoriesTable.allOrdered().filter { countFor(it) > 0 }
     }
 
     private fun countFor(category: Category): Int = transaction {

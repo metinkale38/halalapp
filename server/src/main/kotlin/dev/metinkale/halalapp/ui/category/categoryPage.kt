@@ -56,14 +56,14 @@ fun HTML.categoryHubPage(
 ) {
     if (hub.isNavigation) {
         div(classes = "flex flex-col gap-2") {
-            hub.children.forEach { child ->
+            hub.children.filter { (stats[it.id]?.products ?: 0) > 0 }.forEach { child ->
                 a(classes = "block rounded-xl bg-white p-3 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
                     href = "${hub.path}/${child.id}"
                     div(classes = "flex flex-wrap items-start justify-between gap-x-4 gap-y-1") {
                         div {
                             h2(classes = "text-base font-semibold text-gray-900") { +child.name }
                             div(classes = "text-xs text-gray-500") {
-                                +"${stats[child.id]?.total ?: 0} Produkte"
+                                +"${stats[child.id]?.products ?: 0} Produkte"
                             }
                         }
                         categoryStatsLine(stats[child.id])
@@ -164,13 +164,18 @@ fun HTML.categoriesPage(
         h1 { +"Kategorien" }
     },
 ) {
+    val visibleCategories = categories.mapNotNull { (top, children) ->
+        if ((stats[top.id]?.products ?: 0) == 0) null
+        else top to children.filter { (stats[it.id]?.products ?: 0) > 0 }
+    }
+
     div(classes = "flex flex-col gap-3") {
-        if (categories.isEmpty()) {
+        if (visibleCategories.isEmpty()) {
             card {
                 p(classes = "text-base text-gray-600") { +"Noch keine Kategorien vorhanden." }
             }
         } else {
-            categories.forEach { (top, children) ->
+            visibleCategories.forEach { (top, children) ->
                 a(classes = "block rounded-xl bg-white p-3 shadow-sm transition-colors hover:bg-gray-50 active:bg-gray-100") {
                     href = "/category/${top.id}"
                     div(classes = "flex flex-wrap items-start justify-between gap-x-4 gap-y-1") {
@@ -193,7 +198,7 @@ fun HTML.categoriesPage(
 }
 
 private fun FlowContent.categoryStatsLine(stats: CategoryStats?) {
-    if (stats == null || stats.total == 0) {
+    if (stats == null || stats.products == 0) {
         span(classes = "text-xs text-gray-400") { +"Keine Produkte" }
         return
     }
