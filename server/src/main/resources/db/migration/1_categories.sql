@@ -1,6 +1,6 @@
 DO $$
 BEGIN
-    IF to_regclass('categories') IS NULL THEN
+    IF to_regclass(current_schema() || '.categories') IS NULL THEN
         CREATE TABLE categories (
             id          text PRIMARY KEY,
             name        text NOT NULL,
@@ -12,7 +12,7 @@ END $$;
 
 DO $$
 BEGIN
-    IF to_regclass('category_mapping') IS NULL THEN
+    IF to_regclass(current_schema() || '.category_mapping') IS NULL THEN
         CREATE TABLE category_mapping (
             id          text PRIMARY KEY,
             category_id text NOT NULL REFERENCES categories(id) ON DELETE CASCADE

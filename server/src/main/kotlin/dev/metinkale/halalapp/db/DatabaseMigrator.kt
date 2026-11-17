@@ -22,7 +22,7 @@ object DatabaseMigrator {
         if (migrations.isEmpty()) return
 
         transaction {
-            exec("SELECT pg_advisory_xact_lock(hashtext('$LOCK_KEY')::bigint)")
+            exec("SELECT pg_advisory_xact_lock(hashtext('$LOCK_KEY:' || coalesce(current_schema(), 'public'))::bigint)")
 
             val current = MetadataTable.getValue(VERSION_KEY)?.toIntOrNull() ?: 0
             migrations.filter { it.version > current }.forEach { migration ->
