@@ -106,9 +106,15 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
                     +"Alle anzeigen"
                 }
             }
-            div(classes = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5") {
+            div(classes = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5") {
                 insights.forEachIndexed { index, insight ->
-                    div(classes = if (index >= 6) "hidden h-full lg:block" else "h-full") {
+                    div(
+                        classes = when {
+                            index >= 8 -> "hidden h-full lg:block"
+                            index >= 6 -> "hidden h-full md:block"
+                            else -> "h-full"
+                        }
+                    ) {
                         insightPreviewCard(insight)
                     }
                 }
