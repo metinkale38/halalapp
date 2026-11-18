@@ -1,10 +1,20 @@
 package dev.metinkale.halalapp.ui.component
 
 import kotlinx.html.*
+import java.security.MessageDigest
 import java.time.LocalDate
 
 
 private val year = LocalDate.now().year
+private val styleVersion: String by lazy {
+    val stream = Thread.currentThread().contextClassLoader.getResourceAsStream("static/style.css")
+    stream?.use {
+        MessageDigest.getInstance("SHA-256")
+            .digest(it.readBytes())
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+            .take(12)
+    } ?: "0"
+}
 private const val DEFAULT_DESCRIPTION =
     "Mach deinen Einkauf einfach: Mit der HalalApp erkennst du Halal-Produkte sofort. Dein smarter Begleiter für jeden Supermarkt-Besuch."
 
@@ -47,7 +57,7 @@ fun HTML.template(
         }
         link {
             rel = "stylesheet"
-            href = "/style.css"
+            href = "/style.css?v=$styleVersion"
         }
         script { src = "/script.js?v=2" }
         title(title)
