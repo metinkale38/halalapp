@@ -15,7 +15,9 @@ fun mapToProduct(source: SourceProduct): Product {
     val ingredients = source.ingredients.map {
         IngredientsTable.findById(it.id)?.copy(name = it.name) ?: Ingredient(it.id, it.name, unknownIngredient)
     }
-    val allIngredients = (ingredients + traces + allergens)
+    val relevant = (ingredients + traces + allergens)
+        .filter { it.id !in source.ignoredIngredients }
+    val allIngredients = relevant
         .filter { it.classification.status != Status.HALAL }
     val animal = allIngredients.filter { it.classification.animal }
         .filter { it.classification.status != Status.INCOMPLETE }.distinctBy { it.id }
@@ -36,7 +38,7 @@ fun mapToProduct(source: SourceProduct): Product {
         animalIngredients = animal,
         alcoholIngredients = alcohol,
         unknownIngredients = unknown,
-        status = if (ingredients.isEmpty()) listOf(Status.INCOMPLETE) else buildStatus(
+        status = if (ingredients.isEmpty() || relevant.isEmpty()) listOf(Status.INCOMPLETE) else buildStatus(
             animal,
             alcohol,
             unknown

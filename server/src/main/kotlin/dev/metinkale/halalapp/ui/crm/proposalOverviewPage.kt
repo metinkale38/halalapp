@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.ui.crm
 import dev.metinkale.halalapp.db.table.CrmTable
 import dev.metinkale.halalapp.db.table.ProposalsTable
 import dev.metinkale.halalapp.domain.Status
+import dev.metinkale.halalapp.service.ProductChangeService
 import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.statusBadgeComponent
@@ -42,6 +43,21 @@ fun HTML.proposalOverviewPage() = template(
                 }
                 statusBadgeComponent(
                     "${ProposalsTable.numberOfOpenRequests(dev.metinkale.halalapp.service.CUSTOM_PRODUCT_ENTITY)} Vorschläge",
+                    Status.HALAL
+                )
+            }
+        }
+    }
+
+    a {
+        href = "/crm/product_changes"
+        card {
+            div("flex flex-row items-center") {
+                h2(classes = "text-2xl font-extrabold tracking-tight grow mb-4") {
+                    +"Produktänderungen"
+                }
+                statusBadgeComponent(
+                    "${ProductChangeService.openProposalCount()} Vorschläge",
                     Status.HALAL
                 )
             }

@@ -23,6 +23,7 @@ fun Application.module() {
         categoryRoutes()
         crmRoutes()
         customProductRoutes()
+        productChangeRoutes()
         deployRoutes()
     }
 }

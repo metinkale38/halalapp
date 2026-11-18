@@ -10,8 +10,6 @@ import dev.metinkale.halalapp.server.ensureAdmin
 import dev.metinkale.halalapp.service.CustomProductEdit
 import dev.metinkale.halalapp.service.CustomProductService
 import dev.metinkale.halalapp.service.CustomProductSubmission
-import dev.metinkale.halalapp.service.ProductImageService
-import dev.metinkale.halalapp.service.UploadedImageInput
 import dev.metinkale.halalapp.ui.component.card
 import dev.metinkale.halalapp.ui.component.template
 import dev.metinkale.halalapp.ui.customproducts.CustomProductFormData
@@ -20,28 +18,16 @@ import dev.metinkale.halalapp.ui.customproducts.customProductFormPage
 import dev.metinkale.halalapp.ui.customproducts.customProductHistoryPage
 import dev.metinkale.halalapp.ui.customproducts.customProductListPage
 import io.ktor.http.*
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.principal
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.NotFoundException
-import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.*
-import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.html.*
 import java.time.LocalDate
-
-private data class ParsedProductForm(
-    val fields: Map<String, List<String>>,
-    val files: Map<String, UploadedImageInput>,
-) {
-    fun first(name: String): String = fields[name]?.firstOrNull().orEmpty()
-    fun all(name: String): List<String> = fields[name].orEmpty()
-}
 
 fun Routing.customProductRoutes() {
     get("/image/{id}") {
@@ -227,44 +213,6 @@ fun Routing.customProductRoutes() {
             }
         }
     }
-}
-
-private suspend fun ApplicationCall.readProductForm(): ParsedProductForm {
-    val fields = mutableMapOf<String, MutableList<String>>()
-    val files = mutableMapOf<String, UploadedImageInput>()
-
-    receiveMultipart(formFieldLimit = 128 * 1024).forEachPart { part ->
-        when (part) {
-            is PartData.FormItem -> {
-                val name = part.name ?: ""
-                fields.getOrPut(name) { mutableListOf() }.add(part.value)
-            }
-
-            is PartData.FileItem -> {
-                val name = part.name ?: ""
-                if (name == "front" && !part.originalFileName.isNullOrBlank()) {
-                    val bytes = part.provider().toInputStream().use {
-                        it.readNBytes(ProductImageService.MAX_BYTES + 1)
-                    }
-                    require(bytes.size <= ProductImageService.MAX_BYTES) {
-                        "Ein Bild ist zu groß (maximal 10 MB)."
-                    }
-                    files[name] = UploadedImageInput(
-                        mime = part.contentType?.toString() ?: "image/jpeg",
-                        bytes = bytes,
-                    )
-                }
-            }
-
-            else -> Unit
-        }
-        part.release()
-    }
-
-    return ParsedProductForm(
-        fields = fields.mapValues { it.value.toList() },
-        files = files,
-    )
 }
 
 private fun ParsedProductForm.toFormData() = CustomProductFormData(
