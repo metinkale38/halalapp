@@ -9,18 +9,10 @@ fun FlowContent.insightPreviewCard(item: InsightProduct) {
     a(href = "/product/${product.id}", classes = "group block h-full") {
         card("flex h-full flex-col !p-0 overflow-hidden transition-shadow group-hover:shadow-lg") {
             div(classes = "relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-gray-50") {
-                if (product.images.front.isEmpty()) {
-                    div(classes = "absolute inset-0 flex items-center justify-center p-3") {
-                        span(classes = "text-xs font-semibold uppercase tracking-wider text-gray-400") {
-                            +"Kein Bild"
-                        }
-                    }
-                } else {
-                    img(classes = "absolute inset-0 h-full w-full object-contain p-3") {
-                        attributes.put("referrerpolicy", "no-referrer")
-                        loading = ImgLoading.lazy
-                        src = product.images.getFrontPhoto(400)
-                    }
+                img(classes = "absolute inset-0 h-full w-full object-contain p-3") {
+                    attributes.put("referrerpolicy", "no-referrer")
+                    loading = ImgLoading.lazy
+                    src = product.images.getFrontPhoto(400)
                 }
             }
             div(classes = "flex flex-1 flex-col gap-1 p-3") {
