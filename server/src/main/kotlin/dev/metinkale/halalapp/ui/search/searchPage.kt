@@ -1,5 +1,6 @@
 package dev.metinkale.halalapp.ui.search
 
+import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.service.SearchResult
 import dev.metinkale.halalapp.ui.component.template
@@ -17,6 +18,29 @@ fun HTML.searchPage(entity: SearchResult, isAdmin: Boolean = false) = template(
         }
     }
 
+
+    form(action = "/search", method = FormMethod.get, classes = "flex gap-3") {
+        entity.status?.forEach { status ->
+            hiddenInput(name = "status") { value = status.name.lowercase() }
+        }
+        entity.confidence?.let { confidence ->
+            if (confidence != Confidence.MANUFACTURER) {
+                hiddenInput(name = "confidence") { value = confidence.name.lowercase() }
+            }
+        }
+        input(
+            type = InputType.text,
+            name = "q",
+            classes = "w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-primary500 focus:border-transparent transition"
+        ) {
+            placeholder = "Produkt suchen..."
+            value = entity.query
+            required = true
+        }
+        button(type = ButtonType.submit, classes = "btn-primary") {
+            +"Suchen"
+        }
+    }
 
     div("flex wrap w-full justify-between gap-4 flex-col lg:flex-row") {
 
