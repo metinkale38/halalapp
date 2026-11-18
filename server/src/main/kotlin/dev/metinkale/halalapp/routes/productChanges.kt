@@ -113,15 +113,16 @@ fun Routing.productChangeRoutes() = authenticated {
     }
 
     post("/crm/product_ingredient_ignore/new") {
-        val form = call.readProductForm()
-        val barcode = form.first("id")
+        val params = call.receiveParameters()
+        val barcode = params["id"].orEmpty()
+        val selected = params.getAll("ingredients").orEmpty().filter { it.isNotBlank() }
         try {
             ProductChangeService.submitIgnoredIngredients(
                 ProductIngredientIgnoreSubmission(
                     barcode = barcode,
-                    ingredientIds = form.all("ingredients").filter { it.isNotBlank() },
-                    reason = form.first("reason"),
-                    note = form.first("note"),
+                    ingredientIds = selected,
+                    reason = params["reason"].orEmpty(),
+                    note = params["note"].orEmpty(),
                     creator = call.productChangeUserIdentity(),
                 )
             )
@@ -134,9 +135,9 @@ fun Routing.productChangeRoutes() = authenticated {
                     productId = barcode,
                     productName = product.name,
                     ingredients = ProductChangeService.criticalIngredients(barcode),
-                    selected = form.all("ingredients").toSet(),
-                    reason = form.first("reason"),
-                    note = form.first("note"),
+                    selected = selected.toSet(),
+                    reason = params["reason"].orEmpty(),
+                    note = params["note"].orEmpty(),
                     error = e.message,
                 )
             }
