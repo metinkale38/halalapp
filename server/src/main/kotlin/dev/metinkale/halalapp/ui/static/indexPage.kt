@@ -112,6 +112,7 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
                         classes = when {
                             index >= 8 -> "hidden h-full lg:block"
                             index >= 6 -> "hidden h-full md:block"
+                            index >= 4 -> "hidden h-full sm:block"
                             else -> "h-full"
                         }
                     ) {
