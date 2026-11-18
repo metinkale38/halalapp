@@ -2,10 +2,14 @@ package dev.metinkale.halalapp.worker.productprocessor
 
 import dev.metinkale.halalapp.db.entity.ProductComponent
 import dev.metinkale.halalapp.db.entity.ProductImages
+import dev.metinkale.halalapp.db.entity.ProductOverride
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.db.table.ProductsCustomTable
 import dev.metinkale.halalapp.db.table.ProductsOffTable
+import dev.metinkale.halalapp.db.table.ProductIgnoredIngredientsTable
+import dev.metinkale.halalapp.db.table.ProductOverridesTable
+import dev.metinkale.halalapp.db.table.overrideProductImages
 import dev.metinkale.halalapp.db.table.REPROCESS_PRIORITY_THRESHOLD
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
@@ -40,6 +44,7 @@ data class SourceProduct(
     val categoriesHierarchy: List<String>,
     val customCategoryId: String?,
     val source: ProductSource,
+    val ignoredIngredients: Set<String> = emptySet(),
 )
 
 fun ProductProcessorWorker.load(): List<SourceProduct> {
@@ -47,7 +52,11 @@ fun ProductProcessorWorker.load(): List<SourceProduct> {
     val prioritizedProducts = loadPrioritizedProducts(limit)
     val missingProducts = loadMissingProducts(limit)
     val oldestProducts = loadOldestProcessedProducts(limit)
-    return prioritizedProducts + missingProducts + oldestProducts
+    val overrides = ProductOverridesTable.allOverrides()
+    val ignored = ProductIgnoredIngredientsTable.allByProduct()
+    return (prioritizedProducts + missingProducts + oldestProducts).map {
+        it.withOverrides(overrides[it.id], ignored[it.id].orEmpty())
+    }
 }
 
 private fun loadPrioritizedProducts(limit: Int = 1000): List<SourceProduct> {
@@ -129,12 +138,25 @@ fun loadSource(id: String): SourceProduct? {
         .where { ProductsCustomTable.id eq id }
         .singleOrNull()
         ?.let { mapCustom(it) }
-    if (custom != null) return custom
-    return ProductsOffTable.selectAll()
+    val source = custom ?: ProductsOffTable.selectAll()
         .where { ProductsOffTable.id eq id }
         .singleOrNull()
         ?.let { mapOff(it) }
+    return source?.withOverrides(
+        ProductOverridesTable.find(id),
+        ProductIgnoredIngredientsTable.find(id).map { it.ingredientId }.toSet(),
+    )
 }
+
+private fun SourceProduct.withOverrides(
+    override: ProductOverride?,
+    ignoredIngredients: Set<String>,
+) = copy(
+    name = override?.name ?: name,
+    brand = override?.brand ?: brand,
+    images = override?.frontImageVersion?.let { overrideProductImages(id, it) } ?: images,
+    ignoredIngredients = ignoredIngredients,
+)
 
 private fun mergeCustomFirst(off: List<SourceProduct>, custom: List<SourceProduct>): List<SourceProduct> {
     val customIds = ProductsCustomTable.select(ProductsCustomTable.id)

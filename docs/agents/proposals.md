@@ -9,6 +9,12 @@ wenn tatsächlich ein Vorschlag eingereicht oder geprüft werden soll.
   durchsuchen.
 - Bestehendes Produkt: Produktinformation über
   `/crm/product_insights/new?product_id=<barcode>` einreichen.
+- Stammdaten eines OFF-Produkts korrigieren: `/crm/product_masterdata/new?product_id=<barcode>`
+  mit Name, Marke und/oder Frontfoto. Die Änderungen überschreiben die
+  OpenFoodFacts-Werte dauerhaft, bis ein Admin sie entfernt.
+- Falsch übernommene Zutat eines OFF-Produkts: `/crm/product_ingredient_ignore/new?product_id=<barcode>`.
+  Die Zutat wird nur für dieses Produkt von der Bewertung ausgeschlossen; die
+  OFF-Rohdaten bleiben unverändert.
 - Nicht vorhandenes Produkt: Custom-Produkt über `/crm/products_custom/new`
   einreichen. Der Server lehnt das ab, wenn der Barcode bereits in OpenFoodFacts
   oder HalalApp existiert.
@@ -26,6 +32,11 @@ wenn tatsächlich ein Vorschlag eingereicht oder geprüft werden soll.
 - Ein offener Custom-Vorschlag blockiert weitere Vorschläge für denselben Barcode.
   Nachträgliche Änderungen (z. B. Foto) sind für normale Nutzer nicht möglich;
   ggf. einen Admin bitten.
+- Pro Produkt und Vorschlagstyp ist maximal ein offener Vorschlag erlaubt. Nach
+  der Genehmigung wird das Produkt automatisch neu verarbeitet.
+- Admins prüfen Stammdaten- und Zutaten-Vorschläge unter `/crm/product_changes`.
+  Der Verlauf liegt unter `/crm/product_changes/history`, dauerhafte Overrides
+  werden unter `/crm/product_changes/manage` verwaltet.
 - Schreibzugriffe erfordern einen Login über `forum.halalapp.de`; der resultierende
   `halalapp_auth`-Cookie wird nur temporär verwendet.
 

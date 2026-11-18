@@ -4,7 +4,9 @@ import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductParentTable
 import dev.metinkale.halalapp.feature.product.productPage
 import dev.metinkale.halalapp.feature.product.productPageProposal
+import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.server.isAdmin
+import dev.metinkale.halalapp.service.ProductChangeService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.html.*
 import io.ktor.server.plugins.*
@@ -30,8 +32,18 @@ fun Routing.detailRoutes() {
 
 
             val entity = ProcessedProductsTable.findById(id)
-            if (entity != null) call.respondHtml { productPageProposal(entity, call.isAdmin()) }
-            else call.respond(HttpStatusCode.NotFound)
+            if (entity != null) {
+                val isOffProduct = ProductChangeService.isOffProduct(id)
+                val criticalIngredients =
+                    if (isOffProduct && entity.confidence == Confidence.INGREDIENTS) {
+                        ProductChangeService.criticalIngredients(id)
+                    } else {
+                        emptyList()
+                    }
+                call.respondHtml {
+                    productPageProposal(entity, call.isAdmin(), isOffProduct, criticalIngredients)
+                }
+            } else call.respond(HttpStatusCode.NotFound)
         }
     }
 }

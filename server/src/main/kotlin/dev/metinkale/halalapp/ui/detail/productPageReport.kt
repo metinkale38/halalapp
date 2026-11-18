@@ -18,7 +18,12 @@ import kotlinx.datetime.format.char
 import kotlinx.html.*
 
 
-fun HTML.productPageProposal(product: Product, isAdmin: Boolean = false) = template(
+fun HTML.productPageProposal(
+    product: Product,
+    isAdmin: Boolean = false,
+    isOffProduct: Boolean = false,
+    criticalIngredients: List<dev.metinkale.halalapp.service.CriticalIngredientView> = emptyList(),
+) = template(
     product.brand + " " + product.name + " Änderung vorschlagen - HalalApp",
     isAdmin = isAdmin,
     titleBlock = {
@@ -46,6 +51,29 @@ fun HTML.productPageProposal(product: Product, isAdmin: Boolean = false) = templ
         }
 
         hr { }
+
+        if (isOffProduct) {
+            h5 {
+                +"Stammdaten korrigieren"
+            }
+            +"Name, Marke oder Frontfoto passen nicht? Reiche eine Korrektur zur Prüfung ein."
+            a(classes = "btn-primary") {
+                href = "/crm/product_masterdata/new?product_id=${product.id}"
+                +"Stammdaten ändern"
+            }
+
+            if (product.confidence == Confidence.INGREDIENTS && criticalIngredients.isNotEmpty()) {
+                h5 {
+                    +"Fehlerhafte Zutat melden"
+                }
+                +("Wird eine Zutat für dieses Produkt offensichtlich falsch aus OpenFoodFacts übernommen? " +
+                        "Markiere sie, damit sie nur für dieses Produkt aus der Bewertung entfernt wird.")
+                a(classes = "btn-primary") {
+                    href = "/crm/product_ingredient_ignore/new?product_id=${product.id}"
+                    +"Fehlerhafte Zutat melden (${criticalIngredients.size})"
+                }
+            }
+        }
 
         if (product.confidence == Confidence.INGREDIENTS) {
             h5 {
