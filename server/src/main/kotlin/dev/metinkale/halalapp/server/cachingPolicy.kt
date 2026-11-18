@@ -13,6 +13,7 @@ fun Route.cachingPolicy() {
     install(CachingHeaders) {
         options { call, _ ->
             val path = call.request.path()
+            val isStaticAsset = path.substringAfterLast('/').contains('.')
 
             when {
                 path.startsWith("/crm") -> CachingOptions(CacheControl.NoStore(Visibility.Private))
@@ -20,7 +21,8 @@ fun Route.cachingPolicy() {
                     CacheControl.MaxAge(maxAgeSeconds = 31_536_000, visibility = Visibility.Public)
                 )
 
-                else -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 43200, visibility = Visibility.Public))
+                isStaticAsset -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 43200, visibility = Visibility.Public))
+                else -> CachingOptions(CacheControl.NoCache(Visibility.Public))
             }
         }
     }

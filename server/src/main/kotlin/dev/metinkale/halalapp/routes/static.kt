@@ -14,7 +14,7 @@ import io.ktor.server.routing.get
 
 fun Routing.staticRoutes() {
     get("") {
-        val insights = ProductInsightsService.preview()
+        val insights = ProductInsightsService.preview(limit = 10)
         call.respondHtml { indexPage(insights, call.isAdmin()) }
     }
     get("/scan") { call.respondHtml { barcodeScannerPage(call.isAdmin()) } }
