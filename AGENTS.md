@@ -28,6 +28,11 @@ jeweilige Bereich tatsächlich bearbeitet wird.
 4. PR per `gh pr create` erstellen und die Änderungen darin kurz beschreiben.
 5. Der Build läuft über `./gradlew :server:shadowJar` (siehe CI).
 
+## Login
+
+Details: [`docs/agents/login.md`](docs/agents/login.md). Nur lesen, wenn
+Produktinformationen eingereicht oder Admin-Seiten aufgerufen werden.
+
 ## Deployment
 
 Details: [`docs/agents/deployment.md`](docs/agents/deployment.md). Nur lesen, wenn
