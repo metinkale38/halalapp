@@ -14,6 +14,7 @@ import dev.metinkale.halalapp.db.table.ProductsOffTable
 import dev.metinkale.halalapp.db.table.ProposalsTable
 import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.db.table.markProductsForReprocessing
+import dev.metinkale.halalapp.db.table.processProductsImmediately
 import dev.metinkale.halalapp.ui.crm.CrmLens
 import dev.metinkale.halalapp.ui.crm.getCrmFields
 import dev.metinkale.halalapp.ui.crm.readValues
@@ -282,7 +283,7 @@ object CrmAdminService {
         }
         if (errors.isNotEmpty()) return errors
 
-        transaction {
+        val immediate = transaction {
             val row = table.selectAll().where { table.id eq id }.singleOrNull()
                 ?: throw IllegalArgumentException("Eintrag nicht gefunden.")
             val oldValues = table.readValues(row)
@@ -306,6 +307,7 @@ object CrmAdminService {
             )
             markProductsForReprocessing(table, values)
         }
+        processProductsImmediately(immediate)
         return emptyList()
     }
 
@@ -318,7 +320,7 @@ object CrmAdminService {
         val errors = validate(table, values, creating = true)
         if (errors.isNotEmpty()) return errors
 
-        transaction {
+        val immediate = transaction {
             if (table !== ProductInsightsTable) {
                 val id = values[table.id.name].orEmpty()
                 if (id.isNotBlank() && table.selectAll().where { table.id eq id }.limit(1).any()) {
@@ -341,6 +343,7 @@ object CrmAdminService {
             )
             markProductsForReprocessing(table, values)
         }
+        processProductsImmediately(immediate)
         return emptyList()
     }
 
