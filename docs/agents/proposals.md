@@ -20,6 +20,12 @@ wenn tatsächlich ein Vorschlag eingereicht oder geprüft werden soll.
   oder HalalApp existiert.
 - Inhalt: Herstelleraussage/Quelle als Markdown, Datum, passende Klassifikationen
   (`animal`/`alcohol`) und kurze Notiz an die Admins.
+- Hersteller-Mails immer als **direktes Zitat** einreichen, nicht als Zusammenfassung.
+  Begrüßung, Anrede, Abschluss und Signatur dürfen entfernt werden; die Erklärung
+  und Begründung des Herstellers müssen 1:1 übernommen werden.
+- Zutatenlisten nach Möglichkeit über die Herstellerseite oder Händlerseiten
+  verifizieren. Keine Daten von OpenFoodFacts, HalalApp oder Seiten verwenden, die
+  ihre Daten aus OpenFoodFacts beziehen.
 - Klassifikations-IDs müssen exakt den Optionen im Formular entsprechen; unbekannte
   IDs werden serverseitig verworfen.
 - Hersteller-Mails vor dem Einreichen anonymisieren: Namen, E-Mail-Adressen und
