@@ -3,6 +3,7 @@ package dev.metinkale.halalapp.service
 import dev.metinkale.halalapp.db.entity.Product
 import dev.metinkale.halalapp.db.table.ProcessedProductsTable
 import dev.metinkale.halalapp.db.table.ProductInsightsTable
+import dev.metinkale.halalapp.domain.Confidence
 import dev.metinkale.halalapp.domain.Status
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toKotlinLocalDate
@@ -53,6 +54,7 @@ data class InsightsPage(
 
 object ProductInsightsService {
     val defaultStatus: Set<Status> = setOf(Status.HALAL, Status.DOUBTFUL, Status.UNKNOWN, Status.HARAM)
+    private val manufacturerConfidences = Confidence.entries.filter { it >= Confidence.MANUFACTURER }
 
     fun latestDates(productIds: List<String>): Map<String, LocalDate> = transaction {
         if (productIds.isEmpty()) return@transaction emptyMap()
@@ -114,6 +116,7 @@ object ProductInsightsService {
 
         val filters = buildList<Op<Boolean>> {
             add(ProcessedProductsTable.filter)
+            add(ProcessedProductsTable.confidence inList manufacturerConfidences)
             add(InsightsStatusAllInArray(ProcessedProductsTable.status, arrayParam(status.map { it.name })))
         }
 
