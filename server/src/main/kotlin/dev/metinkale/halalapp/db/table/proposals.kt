@@ -44,45 +44,48 @@ object ProposalsTable : EntityTable<Proposal>("proposals") {
         date = row[date]
     )
 
-    fun <T : Entity> approveRequest(crmTable: CrmTable<T>, proposalId: String) = transaction {
-        val proposal = ProposalsTable.selectAll().where {
-            (ProposalsTable.id eq proposalId) and
-                    (status eq RequestStatus.PENDING) and
-                    (entityType eq crmTable.tableName)
-        }.singleOrNull() ?: throw IllegalArgumentException("Vorschlag nicht gefunden oder bereits bearbeitet.")
+    fun <T : Entity> approveRequest(crmTable: CrmTable<T>, proposalId: String) {
+        val immediate = transaction {
+            val proposal = ProposalsTable.selectAll().where {
+                (ProposalsTable.id eq proposalId) and
+                        (status eq RequestStatus.PENDING) and
+                        (entityType eq crmTable.tableName)
+            }.singleOrNull() ?: throw IllegalArgumentException("Vorschlag nicht gefunden oder bereits bearbeitet.")
 
-        val json = proposal[json]
-        val entityId = (json["id"] ?: json["child_id"])?.takeIf { it.isNotBlank() }
-        val oldValues = entityId?.let { id ->
-            crmTable.selectAll().where { crmTable.id eq id }.singleOrNull()?.let { row ->
-                crmTable.getCrmFields().associate { field -> field.name to field.read(row) }
-            }
-        }
-
-        val claimed = ProposalsTable.update({
-            (ProposalsTable.id eq proposalId) and (status eq RequestStatus.PENDING)
-        }) {
-            it[status] = RequestStatus.APPROVED
-        }
-        if (claimed == 0) throw IllegalArgumentException("Vorschlag wurde bereits bearbeitet.")
-
-        if (entityId == null)
-            crmTable.insert {
-                crmTable.getCrmFields().forEach { field ->
-                    field.write(it, json[field.name].orEmpty())
-                }
-            }
-        else
-            crmTable.upsert(crmTable.id) {
-                crmTable.getCrmFields().forEach { field ->
-                    field.write(it, json[field.name].orEmpty())
+            val json = proposal[json]
+            val entityId = (json["id"] ?: json["child_id"])?.takeIf { it.isNotBlank() }
+            val oldValues = entityId?.let { id ->
+                crmTable.selectAll().where { crmTable.id eq id }.singleOrNull()?.let { row ->
+                    crmTable.getCrmFields().associate { field -> field.name to field.read(row) }
                 }
             }
 
-        ProposalsTable.update({ ProposalsTable.id eq proposalId }) {
-            it[oldJson] = oldValues
+            val claimed = ProposalsTable.update({
+                (ProposalsTable.id eq proposalId) and (status eq RequestStatus.PENDING)
+            }) {
+                it[status] = RequestStatus.APPROVED
+            }
+            if (claimed == 0) throw IllegalArgumentException("Vorschlag wurde bereits bearbeitet.")
+
+            if (entityId == null)
+                crmTable.insert {
+                    crmTable.getCrmFields().forEach { field ->
+                        field.write(it, json[field.name].orEmpty())
+                    }
+                }
+            else
+                crmTable.upsert(crmTable.id) {
+                    crmTable.getCrmFields().forEach { field ->
+                        field.write(it, json[field.name].orEmpty())
+                    }
+                }
+
+            ProposalsTable.update({ ProposalsTable.id eq proposalId }) {
+                it[oldJson] = oldValues
+            }
+            markProductsForReprocessing(crmTable, json)
         }
-        markProductsForReprocessing(crmTable, json)
+        processProductsImmediately(immediate)
     }
 
 
