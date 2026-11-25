@@ -9,30 +9,67 @@ if ('serviceWorker' in navigator) {
 
 let deferredPrompt;
 
+const installBtn = () => document.getElementById('installBtn');
+const installHint = () => document.getElementById('installHint');
+
+const isIos = () =>
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+const isStandalone = () =>
+    window.matchMedia('(display-mode: standalone)').matches ||
+    navigator.standalone === true;
+
+const isMobile = () => window.innerWidth < 769;
+
+const showInstallButton = () => {
+    const btn = installBtn();
+    if (btn) {
+        btn.style.display = 'block';
+    }
+};
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    if (window.innerWidth < 769) {
-        document.getElementById('installBtn').style.display = 'block';
+    if (isMobile()) {
+        showInstallButton();
     }
 });
 
-function installApp() {
-    document.getElementById('installBtn').style.display = 'none';
-    deferredPrompt.prompt();
+if (isIos() && !isStandalone()) {
+    showInstallButton();
+}
 
-    deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-            console.log('Nutzer hat die App installiert.');
-        } else {
-            console.log('Installation abgebrochen.');
-        }
-        deferredPrompt = null;
-    });
+function installApp() {
+    const btn = installBtn();
+    const hint = installHint();
+
+    if (deferredPrompt) {
+        if (btn) btn.style.display = 'none';
+        deferredPrompt.prompt();
+
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('Nutzer hat die App installiert.');
+            } else {
+                console.log('Installation abgebrochen.');
+            }
+            deferredPrompt = null;
+        });
+        return;
+    }
+
+    if (isIos() && hint) {
+        hint.classList.toggle('hidden');
+        hint.classList.toggle('flex');
+        hint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 window.addEventListener('appinstalled', (evt) => {
-    document.getElementById('installBtn').style.display = 'none';
+    const btn = installBtn();
+    if (btn) btn.style.display = 'none';
     console.log('PWA wurde erfolgreich installiert.');
 });
