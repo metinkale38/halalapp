@@ -18,8 +18,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
 });
 
+if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    document.getElementById('installBtn').style.display = 'block';
+}
+
 function installApp() {
     document.getElementById('installBtn').style.display = 'none';
+
+    if (!deferredPrompt) {
+        alert('Tippe in Safari auf das Teilen-Symbol und wähle „Zum Home-Bildschirm“.');
+        return;
+    }
+
     deferredPrompt.prompt();
 
     deferredPrompt.userChoice.then((choiceResult) => {
