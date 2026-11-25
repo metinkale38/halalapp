@@ -1,29 +1,39 @@
 package dev.metinkale.halalapp.db.table
 
+import dev.metinkale.halalapp.worker.productprocessor.ProductProcessorWorker
 import org.jetbrains.exposed.v1.core.IColumnType
 import org.jetbrains.exposed.v1.core.TextColumnType
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.javatime.JavaInstantColumnType
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
-import org.jetbrains.exposed.v1.jdbc.update
+import org.slf4j.LoggerFactory
 import java.time.Instant
 
 val REPROCESS_PRIORITY_TIMESTAMP: Instant = Instant.EPOCH
 val REPROCESS_PRIORITY_THRESHOLD: Instant = Instant.parse("2000-01-01T00:00:00Z")
 
-fun JdbcTransaction.markProductsForReprocessing(crmTable: CrmTable<*>, json: Map<String, String>) {
-    when (crmTable) {
-        ClassificationsTable -> json["id"]?.takeIf { it.isNotBlank() }?.let { markClassificationProducts(it) }
-        IngredientsTable -> json["id"]?.takeIf { it.isNotBlank() }?.let { markIngredientProducts(it) }
-        ProductInsightsTable -> json["product_id"]?.takeIf { it.isNotBlank() }?.let { markProductForReprocessing(it) }
-        ProductParentTable -> json["child_id"]?.takeIf { it.isNotBlank() }?.let { markProductForReprocessing(it) }
-        CategoriesTable, CategoryMappingTable -> Unit
-    }
-}
+private val logger = LoggerFactory.getLogger("PRODUCT_REPROCESSING")
 
-private fun JdbcTransaction.markProductForReprocessing(productId: String) {
-    ProcessedProductsTable.update({ ProcessedProductsTable.id eq productId }) {
-        it[ProcessedProductsTable.lastUpdated] = REPROCESS_PRIORITY_TIMESTAMP
+fun JdbcTransaction.markProductsForReprocessing(crmTable: CrmTable<*>, json: Map<String, String>): List<String> =
+    when (crmTable) {
+        ClassificationsTable -> {
+            json["id"]?.takeIf { it.isNotBlank() }?.let { markClassificationProducts(it) }
+            emptyList()
+        }
+
+        IngredientsTable -> {
+            json["id"]?.takeIf { it.isNotBlank() }?.let { markIngredientProducts(it) }
+            emptyList()
+        }
+
+        ProductInsightsTable -> listOfNotNull(json["product_id"]?.takeIf { it.isNotBlank() })
+        ProductParentTable -> listOfNotNull(json["child_id"]?.takeIf { it.isNotBlank() })
+        CategoriesTable, CategoryMappingTable -> emptyList()
+    }
+
+fun processProductsImmediately(productIds: Iterable<String>) {
+    productIds.distinct().forEach { productId ->
+        runCatching { ProductProcessorWorker.processOne(productId) }
+            .onFailure { logger.error("Could not process product $productId", it) }
     }
 }
 
