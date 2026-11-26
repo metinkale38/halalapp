@@ -66,22 +66,19 @@ fun Routing.categoryRoutes() {
     }
 
     get("/sitemap.xml") {
-        val urls = buildList {
+        val xml = buildString {
+            appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+            appendLine("""<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">""")
             if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS) {
                 CategoryService.indexableCategories().forEach {
-                    add("  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>")
+                    appendLine("  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>")
                 }
             }
             SitemapService.indexableProducts().forEach {
-                add("  <url><loc>$BASE_URL/product/$it</loc></url>")
+                appendLine("  <url><loc>$BASE_URL/product/$it</loc></url>")
             }
-        }.joinToString("\n")
-        val xml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-            $urls
-            </urlset>
-        """.trimIndent()
+            appendLine("</urlset>")
+        }
         call.respondText(xml, ContentType.Application.Xml)
     }
 }
