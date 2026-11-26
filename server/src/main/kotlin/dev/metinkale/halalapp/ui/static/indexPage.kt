@@ -82,6 +82,25 @@ fun HTML.indexPage(insights: List<InsightProduct> = emptyList(), isAdmin: Boolea
                 +"Auf dem Smartphone installieren"
             }
 
+            div(classes = "hidden flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700") {
+                id = "installHint"
+                p {
+                    +"So installierst du die HalalApp auf deinem iPhone oder iPad:"
+                }
+                ol(classes = "flex flex-col gap-1 list-decimal list-inside") {
+                    li {
+                        +"Tippe in Safari unten auf das Teilen-Symbol"
+                        span(classes = "mx-1 inline-block align-middle") {
+                            unsafe {
+                                raw("""<svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" viewBox="0 -960 960 960" fill="currentColor"><path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>""")
+                            }
+                        }
+                    }
+                    li { +"Wähle „Zum Home-Bildschirm“" }
+                    li { +"Bestätige mit „Hinzufügen“" }
+                }
+            }
+
             if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS || isAdmin) {
                 a(classes = "w-full btn-secondary text-center") {
                     href = "/categories"

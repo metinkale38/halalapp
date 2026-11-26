@@ -9,40 +9,67 @@ if ('serviceWorker' in navigator) {
 
 let deferredPrompt;
 
+const installBtn = () => document.getElementById('installBtn');
+const installHint = () => document.getElementById('installHint');
+
+const isIos = () =>
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+const isStandalone = () =>
+    window.matchMedia('(display-mode: standalone)').matches ||
+    navigator.standalone === true;
+
+const isMobile = () => window.innerWidth < 769;
+
+const showInstallButton = () => {
+    const btn = installBtn();
+    if (btn) {
+        btn.style.display = 'block';
+    }
+};
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    if (window.innerWidth < 769) {
-        document.getElementById('installBtn').style.display = 'block';
+    if (isMobile()) {
+        showInstallButton();
     }
 });
 
-if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-    document.getElementById('installBtn').style.display = 'block';
+if (isIos() && !isStandalone()) {
+    showInstallButton();
 }
 
 function installApp() {
-    document.getElementById('installBtn').style.display = 'none';
+    const btn = installBtn();
+    const hint = installHint();
 
-    if (!deferredPrompt) {
-        alert('Tippe in Safari auf das Teilen-Symbol und wähle „Zum Home-Bildschirm“.');
+    if (deferredPrompt) {
+        if (btn) btn.style.display = 'none';
+        deferredPrompt.prompt();
+
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('Nutzer hat die App installiert.');
+            } else {
+                console.log('Installation abgebrochen.');
+            }
+            deferredPrompt = null;
+        });
         return;
     }
 
-    deferredPrompt.prompt();
-
-    deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-            console.log('Nutzer hat die App installiert.');
-        } else {
-            console.log('Installation abgebrochen.');
-        }
-        deferredPrompt = null;
-    });
+    if (isIos() && hint) {
+        hint.classList.toggle('hidden');
+        hint.classList.toggle('flex');
+        hint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 window.addEventListener('appinstalled', (evt) => {
-    document.getElementById('installBtn').style.display = 'none';
+    const btn = installBtn();
+    if (btn) btn.style.display = 'none';
     console.log('PWA wurde erfolgreich installiert.');
 });
