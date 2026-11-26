@@ -4,6 +4,7 @@ import dev.metinkale.halalapp.domain.Status
 import dev.metinkale.halalapp.server.FeatureFlags
 import dev.metinkale.halalapp.server.isAdmin
 import dev.metinkale.halalapp.service.CategoryService
+import dev.metinkale.halalapp.service.SitemapService
 import dev.metinkale.halalapp.ui.category.categoriesPage
 import dev.metinkale.halalapp.ui.category.categoryHubPage
 import io.ktor.http.ContentType
@@ -66,9 +67,14 @@ fun Routing.categoryRoutes() {
 
     if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS) {
         get("/sitemap.xml") {
-            val urls = CategoryService.indexableCategories().joinToString("\n") {
-                "  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>"
-            }
+            val urls = buildList {
+                CategoryService.indexableCategories().forEach {
+                    add("  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>")
+                }
+                SitemapService.indexableProducts().forEach {
+                    add("  <url><loc>$BASE_URL/product/$it</loc></url>")
+                }
+            }.joinToString("\n")
             val xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
