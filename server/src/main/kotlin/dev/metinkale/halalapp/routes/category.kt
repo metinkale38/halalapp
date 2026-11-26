@@ -65,24 +65,24 @@ fun Routing.categoryRoutes() {
         }
     }
 
-    if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS) {
-        get("/sitemap.xml") {
-            val urls = buildList {
+    get("/sitemap.xml") {
+        val urls = buildList {
+            if (FeatureFlags.CATEGORIES_VISIBLE_FOR_USERS) {
                 CategoryService.indexableCategories().forEach {
                     add("  <url><loc>$BASE_URL${CategoryService.categoryPath(it)}</loc></url>")
                 }
-                SitemapService.indexableProducts().forEach {
-                    add("  <url><loc>$BASE_URL/product/$it</loc></url>")
-                }
-            }.joinToString("\n")
-            val xml = """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-                $urls
-                </urlset>
-            """.trimIndent()
-            call.respondText(xml, ContentType.Application.Xml)
-        }
+            }
+            SitemapService.indexableProducts().forEach {
+                add("  <url><loc>$BASE_URL/product/$it</loc></url>")
+            }
+        }.joinToString("\n")
+        val xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            $urls
+            </urlset>
+        """.trimIndent()
+        call.respondText(xml, ContentType.Application.Xml)
     }
 }
 
