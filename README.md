@@ -40,6 +40,28 @@ Da es sich um eine progressive Web-Anwendung handelt, benötigst du keinen Downl
 
 ---
 
+## 🐳 Docker
+
+Das Server-Image wird über GitHub Actions in der GitHub Container Registry
+veröffentlicht:
+
+```bash
+docker run -p 8080:8080 \
+  -e JDBC_URL=jdbc:postgresql://db:5432/halalapp \
+  -e JDBC_USERNAME=halalapp \
+  -e JDBC_PASSWORD=geheim \
+  ghcr.io/metinkale38/halalapp:latest
+```
+
+Weitere Konfiguration erfolgt über `AUTH_TOKEN`, `DEPLOY_SECRET` und
+`ENABLE_STATS`. Alternativ lässt sich das Image lokal bauen:
+
+```bash
+docker build -t halalapp .
+```
+
+---
+
 ## 🤝 Mitwirken & Community
 
 Da dieses Projekt von und für die Gemeinschaft lebt, ist Feedback und Mitarbeit ausdrücklich erwünscht:
