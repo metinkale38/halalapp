@@ -32,9 +32,9 @@ wenn tatsächlich ein Vorschlag eingereicht oder geprüft werden soll.
   Feld `animal` die Option `halal` („Tierisch unbedenklich“) wählen, nicht „keine
   Angabe“.
 - `alcohol_lowamount` nur für geringe, unspezifizierte Alkoholmengen verwenden.
-  Ist der Alkohol ausdrücklich Trägerstoff der Aromen, `aroma_with_alcohol` wählen;
-  bei Extraktionsmitteln `extract_with_alcohol` (bzw. `unknown_extract`, wenn nur
-  möglich).
+  Ist der Alkohol ausdrücklich Trägerstoff der Aromen, `aroma_with_alcohol` wählen.
+  Ist Alkohol als Extraktionsmittel bestätigt, `extract_with_alcohol`; `unknown_extract`
+  nur, wenn unklar ist, ob der Extrakt Alkohol enthält.
 - Hersteller-Mails vor dem Einreichen anonymisieren: Namen, E-Mail-Adressen und
   Telefonnummern entfernen, Firmennamen behalten.
 - Custom-Produkte: `id` (Barcode), `name` ohne Marke, `brand`, optionale
