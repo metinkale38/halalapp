@@ -198,7 +198,7 @@ fun HTML.productPage(product: Product, isAdmin: Boolean = false) = template(
                         if (idx > 0) +" (älterer Stand)"
                     }
 
-                    it.content?.let { markdownComponent(it.replace("\n", "<br/>")) }
+                    it.content?.let { markdownComponent(it) }
 
                 }
             }
