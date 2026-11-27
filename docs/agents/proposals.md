@@ -28,6 +28,10 @@ wenn tatsächlich ein Vorschlag eingereicht oder geprüft werden soll.
   ihre Daten aus OpenFoodFacts beziehen.
 - Klassifikations-IDs müssen exakt den Optionen im Formular entsprechen; unbekannte
   IDs werden serverseitig verworfen.
+- Bestätigt der Hersteller, dass keine tierischen Bestandteile enthalten sind, im
+  Feld `animal` die Option `halal` („Tierisch unbedenklich“) wählen, nicht „keine
+  Angabe“. Bestätigt er geringe Alkoholmengen als Aromaträger, passt
+  `alcohol_lowamount`.
 - Hersteller-Mails vor dem Einreichen anonymisieren: Namen, E-Mail-Adressen und
   Telefonnummern entfernen, Firmennamen behalten.
 - Custom-Produkte: `id` (Barcode), `name` ohne Marke, `brand`, optionale
